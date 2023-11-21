@@ -12,6 +12,7 @@ int main( int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	
+	// initialize chip8
 	chip8_reset();
 
 	if (!chip8_load_rom(argv[1]))
@@ -20,6 +21,9 @@ int main( int argc, char *argv[])
 	}
 
 	printf("program loaded!\n");
+
+	for (int n = 0; n < 16; ++n)
+		chip8_run_cycle();
 
 	return EXIT_SUCCESS;
 }
