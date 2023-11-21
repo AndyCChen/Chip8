@@ -55,7 +55,7 @@ int chip8_load_rom(const char const *file_path)
 
 void chip8_run_cycle()
 {
-   // 16 bit opcode
+   // fetch 16 bit opcode
    uint16_t opcode = myChip8.ram[myChip8.PC];     // grab first 8 bits of opcode
    opcode = opcode << 8;                          
    opcode = opcode | myChip8.ram[myChip8.PC + 1]; // bitwise or the first 8 bits with second 8 bits to form 16 bit opcode
@@ -64,48 +64,177 @@ void chip8_run_cycle()
    uint8_t first_nibble = myChip8.ram[myChip8.PC];
    first_nibble = first_nibble >> 4; // left shift 4 bits to get rid of second nibble
    printf("%04x %04x ", myChip8.PC, opcode);
+
+   // increment program counter to point to next intruction (next 2 bytes)
+   myChip8.PC += 2;
    
    switch(first_nibble)
    {
-      case 0x00: 
+      case 0x0: 
       {
          if (opcode == 0x00E0)
+         {
             printf("00E0 opcode\n");
+         }
          else if (opcode == 0x00EE)
-            printf("00EE opcode\n");
+         {
+            if (myChip8.sp > 0)
+            {
+               myChip8.sp -= 1;
+               myChip8.PC = myChip8.stack[myChip8.sp]; // return from subroutine, jump to return address
+            }
+            else
+            {
+               printf("Empty stack, cannont return!\n");
+            }
+
+            printf("00EE opcode\n", first_nibble);
+         }
          break;
       } 
-      case 0x01: 
+      case 0x1: 
       {
-         printf("1NNN opcode\n"); 
+         uint16_t NNN = opcode & 0x0FFF;
+         myChip8.PC = NNN; // jump to address NNN
+
+         printf("%01x %03x\n", first_nibble, NNN); 
          break;
       }
-      case 0x02: printf("2 opcode\n"); break;
-      case 0x03: printf("3 opcode\n"); break;
-      case 0x04: printf("4 opcode\n"); break;
-      case 0x05: printf("5 opcode\n"); break;
-      case 0x06: 
+      case 0x2: 
       {
-         uint8_t X = (opcode & 0x0F00) >> 8;
-         uint8_t NN = opcode & 0x00FF;
+         uint16_t NNN = opcode & 0x0FFF;
+
+         myChip8.stack[myChip8.sp] = myChip8.PC; // save address of next opcode onto the stack (return address)
+
+         if (myChip8.sp < MAX_STACK_LEVEL + 1)
+         {
+            myChip8.sp += 1;
+            myChip8.PC = NNN; // execute subroutine at address NNN
+         }
+         else 
+         {
+            printf("Stack overflow occured!\n");
+         }
+
+         printf("%01x %03x\n", first_nibble, NNN); 
+         break;
+      }
+      case 0x3: 
+      {
+         u_int8_t X = (opcode & 0x0F00) >> 8;
+         u_int8_t NN = opcode & 0x00FF;
+
+         if (myChip8.V[X] == NN)
+         {
+            myChip8.PC += 2; // skip next intruction if V[X] equals NN
+         }
+
+         printf("%01x %01x %02x\n", first_nibble, X, NN); 
+         break;
+      }
+      case 0x4: 
+      {
+         u_int8_t X = (opcode & 0x0F00) >> 8;
+         u_int8_t NN = opcode & 0x00FF;
+
+         if (myChip8.V[X] != NN)
+         {
+            myChip8.PC += 2; // skip next instruction if V[X] not equals NN
+         }
 
          printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
          break;
       }
-      case 0x07: printf("7 opcode\n"); break;
-      case 0x08: printf("8 opcode\n"); break;
-      case 0x09: printf("9 opcode\n"); break;
-      case 0x0A: 
+      case 0x5: 
+      {
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t Y = (opcode & 0x00F0) >> 4;
+
+         if (myChip8.V[X] == myChip8.V[Y])
+         {
+            myChip8.PC += 2; // skip next instruction if V[X] equals V[Y]
+         }
+
+         printf("%01x %01x %01x opcode\n", first_nibble, X, Y);
+         break;
+      }
+      case 0x6: 
+      {
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t NN = opcode & 0x00FF;
+         myChip8.V[X] = NN; // load register V[X] with 8 bit immediate NN
+
+         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
+         break;
+      }
+      case 0x7: 
+      {
+         u_int8_t X = (opcode & 0x0F00) >> 8;
+         u_int16_t NN = opcode & 0x00FF;
+
+         myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
+
+         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
+         break;
+      }
+      case 0x8: 
+      {
+         uint8_t last_nibble = opcode & 0x000F;
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t Y = opcode & 0x00F0 >> 4;
+
+         if (last_nibble == 0x0)
+         {
+            myChip8.V[X] = myChip8.V[Y]; // store V[Y] into V[X]
+         }
+         else if (last_nibble == 0x1)
+         {
+            myChip8.V[X] = myChip8.V[X] | myChip8.V[Y]; // set V[X] to biwize or of V[X] and V[Y]
+         }
+         else if (last_nibble == 0x2)
+         {
+            myChip8.V[X] = myChip8.V[X] & myChip8.V[Y]; // set V[X] to biwize and of V[X] and V[Y]
+         }
+         else if (last_nibble == 0x3)
+         {
+            
+         }
+
+         printf("8 opcode\n"); 
+         break;
+      }
+      case 0x9: 
+      {
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t Y = (opcode & 0x00F0) >> 4;
+
+         if (myChip8.V[X] != myChip8.V[Y])
+         {
+            myChip8.PC += 2; // skip next instruction if V[X] not equals V[Y]
+         }
+
+         printf("%01x %01x %01x opcode\n", first_nibble, X, Y); 
+         break;
+      }
+      case 0xA: 
       {
          uint16_t NNN = opcode & 0x0FFF;
-         myChip8.I = NNN;
+         myChip8.I = NNN; // load address register with address NNN
          
          printf("%01x %03x opcode\n", first_nibble, NNN);
          break;
       }
-      case 0x0B: printf("B opcode\n"); break;
-      case 0x0C: printf("C opcode\n"); break;
-      case 0x0D: 
+      case 0xB: 
+      {
+         uint16_t NNN = opcode & 0x0FFF;
+
+         myChip8.PC = NNN + myChip8.V[0];
+
+         printf("B opcode\n"); 
+         break;
+      }
+      case 0xC: printf("C opcode\n"); break;
+      case 0xD: 
       {
          uint8_t X = (opcode & 0x0F00) >> 8;
          uint8_t Y = (opcode & 0x00F0) >> 4;
@@ -114,10 +243,7 @@ void chip8_run_cycle()
          printf("%01x %01x %01x %01x\n", first_nibble, X, Y, N); 
          break;
       }
-      case 0x0E: printf("E opcode\n"); break;
-      case 0x0F: printf("F opcode\n"); break;
+      case 0xE: printf("E opcode\n"); break;
+      case 0xF: printf("F opcode\n"); break;
    }
-   
-   // increment program counter to point to next intruction (next 2 bytes)
-   myChip8.PC += 2;
 }
