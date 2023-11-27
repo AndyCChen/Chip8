@@ -24,8 +24,6 @@ typedef struct {
 	uint8_t sound_timer;
 } Chip8;
 
-extern Chip8 myChip8;
-
 // resets all chip8 registers and timers
 void chip8_reset();
 

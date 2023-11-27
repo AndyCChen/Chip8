@@ -1,5 +1,5 @@
 # files to compile
-OBJS = main.c src/chip8.c
+OBJS = main.c src/chip8.c src/display.c
 
 # compiler to use
 CC = gcc

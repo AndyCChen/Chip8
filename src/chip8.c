@@ -61,8 +61,7 @@ void chip8_run_cycle()
    opcode = opcode | myChip8.ram[myChip8.PC + 1]; // bitwise or the first 8 bits with second 8 bits to form 16 bit opcode
 
    // first 4 bits (nibble) of a opcode
-   uint8_t first_nibble = myChip8.ram[myChip8.PC];
-   first_nibble = first_nibble >> 4; // left shift 4 bits to get rid of second nibble
+   uint8_t first_nibble = (opcode & 0xF000) >> 12;
    printf("%04x %04x ", myChip8.PC, opcode);
 
    // increment program counter to point to next intruction (next 2 bytes)
@@ -121,8 +120,8 @@ void chip8_run_cycle()
       }
       case 0x3: 
       {
-         u_int8_t X = (opcode & 0x0F00) >> 8;
-         u_int8_t NN = opcode & 0x00FF;
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t NN = opcode & 0x00FF;
 
          if (myChip8.V[X] == NN)
          {
@@ -134,8 +133,8 @@ void chip8_run_cycle()
       }
       case 0x4: 
       {
-         u_int8_t X = (opcode & 0x0F00) >> 8;
-         u_int8_t NN = opcode & 0x00FF;
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t NN = opcode & 0x00FF;
 
          if (myChip8.V[X] != NN)
          {
@@ -162,6 +161,7 @@ void chip8_run_cycle()
       {
          uint8_t X = (opcode & 0x0F00) >> 8;
          uint8_t NN = opcode & 0x00FF;
+
          myChip8.V[X] = NN; // load register V[X] with 8 bit immediate NN
 
          printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
@@ -169,8 +169,8 @@ void chip8_run_cycle()
       }
       case 0x7: 
       {
-         u_int8_t X = (opcode & 0x0F00) >> 8;
-         u_int16_t NN = opcode & 0x00FF;
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint16_t NN = opcode & 0x00FF;
 
          myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
 
@@ -219,6 +219,7 @@ void chip8_run_cycle()
       case 0xA: 
       {
          uint16_t NNN = opcode & 0x0FFF;
+
          myChip8.I = NNN; // load address register with address NNN
          
          printf("%01x %03x opcode\n", first_nibble, NNN);
