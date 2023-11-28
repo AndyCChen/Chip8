@@ -197,6 +197,38 @@ void chip8_run_cycle()
          }
          else if (last_nibble == 0x3)
          {
+            // to XOR two bit patterns get results of bitwise AND and bitwise NOR
+            // then NOR these two results together to get the XOR output
+
+            uint8_t AND = myChip8.V[X] & myChip8.V[Y];
+            uint8_t NOR = ~ ( myChip8.V[X] | myChip8.V[Y] ); // a bitwise NOR is the negated output of a bitwise OR
+
+            // bitwise NOR the previous AND and NOR outputs
+            uint8_t XOR_output = ~ ( AND | NOR );
+
+            myChip8.V[X] = XOR_output; // store VX XOR VY into VX
+         }
+         else if (last_nibble == 0x4)
+         {
+            // set register VF to 1 on overflow, otherwise set to 0
+            myChip8.V[0xF] = ( myChip8.V[X] + myChip8.V[Y] ) > 255;
+
+            myChip8.V[X] += myChip8.V[Y]; // add VY to VX, will wrap on overflow because registers are unsigned
+         }
+         else if (last_nibble == 0x5)
+         {
+
+         }
+         else if (last_nibble == 0x6)
+         {
+
+         }
+         else if (last_nibble == 0x7)
+         {
+
+         }
+         else if (last_nibble == 0xE)
+         {
             
          }
 
