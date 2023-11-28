@@ -1,7 +1,6 @@
 //#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include "SDL.h"
 #include "./includes/chip8.h"
 #include "./includes/display.h"
@@ -24,8 +23,8 @@ int main( int argc, char *argv[])
 
 	printf("program loaded!\n");
 
-	for (int n = 0; n < 16; ++n)
-		chip8_run_cycle();
+/* 	for (int n = 0; n < 16; ++n)
+		chip8_run_cycle(); */
 
 	if (display_init(18) < 0) {
 		return EXIT_FAILURE;

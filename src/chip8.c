@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../includes/chip8.h"
+#include "../includes/display.h"
 
 Chip8 myChip8;
 
@@ -263,7 +264,7 @@ void chip8_run_cycle()
 
          myChip8.PC = NNN + myChip8.V[0];
 
-         printf("B opcode\n"); 
+         printf("%01x %03x opcode\n", first_nibble, NNN); 
          break;
       }
       case 0xC: printf("C opcode\n"); break;
@@ -272,6 +273,12 @@ void chip8_run_cycle()
          uint8_t X = (opcode & 0x0F00) >> 8;
          uint8_t Y = (opcode & 0x00F0) >> 4;
          uint8_t N = (opcode & 0x000F);
+
+         // initial position coordinates can wrap if greater than width or height boundaries
+         uint8_t x_pos = myChip8.V[X] % PIXELS_W; // initial x position of sprite
+         uint8_t y_pos = myChip8.V[Y] % PIXELS_H; // initial y position of sprite
+
+         display_draw(x_pos, y_pos, N);
 
          printf("%01x %01x %01x %01x\n", first_nibble, X, Y, N); 
          break;

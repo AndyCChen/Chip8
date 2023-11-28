@@ -17,4 +17,12 @@ void display_close();
 
 void display_update();
 
+// draw to the display
+// takes in the initial x and y position coordinates of sprite placement
+// and the height of the sprite ranging from 1-15 pixels
+void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height);
+
+// set all display pixels to off
+void display_clear();
+
 #endif

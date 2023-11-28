@@ -2,6 +2,7 @@
 #include "SDL.h"
 
 #include "../includes/display.h"
+#include "../includes/chip8.h"
 
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
@@ -9,10 +10,17 @@ SDL_Renderer *gRenderer = NULL;
 int SCREEN_WIDTH = PIXELS_W;
 int SCREEN_HEIGHT = PIXELS_H;
 
+// array of rectangles representing a pixel for the display
 SDL_Rect Display [PIXELS_W * PIXELS_H];
+
+// keeps track of the on or off state of a rectangle (pixel)
+// 0: off, pixel is black
+// 1: on, pixel is white
+uint8_t Display_state [PIXELS_W * PIXELS_H];
 
 int display_init(int display_scale_factor)
 {
+   // scale up resolution based on scale factor
    SCREEN_WIDTH *= display_scale_factor;
    SCREEN_HEIGHT  *= display_scale_factor;
 
@@ -37,6 +45,7 @@ int display_init(int display_scale_factor)
       return -1;
    }
 
+   // initialze display with 64 * 32 rectangles (pixels)
    // rectangles here represent a single pixel
    int number_of_rects = PIXELS_W * PIXELS_H; // number of rectangles to render
    int rect_w = SCREEN_WIDTH / PIXELS_W;      // width of a rect
@@ -81,7 +90,47 @@ void display_update()
    SDL_RenderClear(gRenderer);
 
    SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-   SDL_RenderDrawRects(gRenderer, Display, PIXELS_W * PIXELS_H);  // pixels_w  * pixels_h is the number of rectangles being drawn
+   SDL_RenderDrawRects(gRenderer, &Display, PIXELS_W * PIXELS_H);  // pixels_w  * pixels_h is the number of rectangles being drawn
 
    SDL_RenderPresent(gRenderer);
+}
+
+void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
+{
+   // first clear the VF flag incase it was previously set to 1
+   myChip8.V[0xF] = 0;
+
+   const int sprite_width = 8; // sprites are always 8 bits (pixels) wide
+
+   uint8_t *sprite = &myChip8.ram[myChip8.I]; // sprite data at starting address I in ram
+
+   uint8_t *sprite_origin = &Display_state [( y_pos * PIXELS_W  ) + x_pos]; // initial position origin of sprite in the display
+
+   // iterate through entire sprite byte by byte
+   for(int sprite_byte = 0; sprite_byte < sprite_height; ++sprite_byte)
+   {
+      // iterate through sprit_byte bit by bit
+      for (int sprite_bit = 0; sprite_bit < sprite_width; ++sprite_bit)
+      {
+         // state of the display pixel that we wish to XOR with
+         uint8_t display_pixel_state = sprite_origin[( sprite_byte * sprite_width ) + sprite_bit];
+
+         // state of sprite pixel that we wish to XOR with
+         uint8_t sprite_pixel_state = sprite[sprite_byte] & ( 1 << ( 7 - sprite_bit ) );
+
+         // set VF flag if both states are on (eqauls 1)
+         if (display_pixel_state == 1 && sprite_pixel_state == 1)
+         {
+            myChip8.V[0xF] = 1;
+         }
+
+
+      }
+   }
+}
+
+void display_clear()
+{
+   // set all display pixels to off state
+   memset(Display_state, 0, PIXELS_H * PIXELS_W);
 }
