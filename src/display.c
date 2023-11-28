@@ -1,22 +1,26 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include "SDL.h"
 
 #include "../includes/display.h"
 #include "../includes/chip8.h"
 
-SDL_Window *gWindow = NULL;
-SDL_Renderer *gRenderer = NULL;
+static SDL_Window *gWindow = NULL;
+static SDL_Renderer *gRenderer = NULL;
 
-int SCREEN_WIDTH = PIXELS_W;
-int SCREEN_HEIGHT = PIXELS_H;
+static int SCREEN_WIDTH = PIXELS_W;
+static int SCREEN_HEIGHT = PIXELS_H;
 
 // array of rectangles representing a pixel for the display
-SDL_Rect Display [PIXELS_W * PIXELS_H];
+static SDL_Rect Display [PIXELS_W * PIXELS_H];
 
 // keeps track of the on or off state of a rectangle (pixel)
 // 0: off, pixel is black
 // 1: on, pixel is white
-uint8_t Display_state [PIXELS_W * PIXELS_H];
+static uint8_t Display_buffer [PIXELS_W * PIXELS_H];
+
+// flag that is used by draw and clear instructions to signal when the display needs to be updated
+static bool update_flag = false;
 
 int display_init(int display_scale_factor)
 {
@@ -93,6 +97,9 @@ void display_update()
    SDL_RenderDrawRects(gRenderer, &Display, PIXELS_W * PIXELS_H);  // pixels_w  * pixels_h is the number of rectangles being drawn
 
    SDL_RenderPresent(gRenderer);
+
+   // reset update flag back to false when render updates are done
+   update_flag = false;
 }
 
 void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
@@ -104,14 +111,26 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
 
    uint8_t *sprite = &myChip8.ram[myChip8.I]; // sprite data at starting address I in ram
 
-   uint8_t *sprite_origin = &Display_state [( y_pos * PIXELS_W  ) + x_pos]; // initial position origin of sprite in the display
+   uint8_t *sprite_origin = &Display_buffer [( y_pos * PIXELS_W  ) + x_pos]; // initial position origin of sprite in the display
 
    // iterate through entire sprite byte by byte
    for(int sprite_byte = 0; sprite_byte < sprite_height; ++sprite_byte)
    {
+      // stop drawing if we go over the max pixel height
+      if (y_pos + sprite_byte >= PIXELS_H)
+      {
+         break;
+      }
+
       // iterate through sprit_byte bit by bit
       for (int sprite_bit = 0; sprite_bit < sprite_width; ++sprite_bit)
       {
+         // stop drawing if we go over the max pixel width
+         if (x_pos + sprite_bit >= PIXELS_W)
+         {
+            break;
+         }
+
          // state of the display pixel that we wish to XOR with
          uint8_t display_pixel_state = sprite_origin[( sprite_byte * sprite_width ) + sprite_bit];
 
@@ -124,13 +143,25 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
             myChip8.V[0xF] = 1;
          }
 
-
+         // xor display buffer pixel state with sprite pixel state
+         sprite_origin[(sprite_byte * sprite_width) + sprite_bit] = display_pixel_state ^ sprite_pixel_state;
       }
    }
+
+   // signal that we want to update the display
+   update_flag = true;
 }
 
 void display_clear()
 {
    // set all display pixels to off state
-   memset(Display_state, 0, PIXELS_H * PIXELS_W);
+   memset(Display_buffer, 0, PIXELS_H * PIXELS_W);
+
+   // signal that we want to update display
+   update_flag = true;
+}
+
+bool display_get_update_flag()
+{
+   return update_flag;
 }

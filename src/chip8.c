@@ -274,12 +274,6 @@ void chip8_run_cycle()
          uint8_t Y = (opcode & 0x00F0) >> 4;
          uint8_t N = (opcode & 0x000F);
 
-         // initial position coordinates can wrap if greater than width or height boundaries
-         uint8_t x_pos = myChip8.V[X] % PIXELS_W; // initial x position of sprite
-         uint8_t y_pos = myChip8.V[Y] % PIXELS_H; // initial y position of sprite
-
-         display_draw(x_pos, y_pos, N);
-
          printf("%01x %01x %01x %01x\n", first_nibble, X, Y, N); 
          break;
       }

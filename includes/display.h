@@ -1,6 +1,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include <stdbool.h>
+
 // contains all sdl2 utilities for handling the display for chip8
 
 // chip8 display resolution is 64 by 32 pixels
@@ -24,5 +26,9 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height);
 
 // set all display pixels to off
 void display_clear();
+
+// returns the update flag
+// true if the display needs to be updated, else is false
+bool display_get_update_flag();
 
 #endif
