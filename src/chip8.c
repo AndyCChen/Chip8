@@ -9,9 +9,9 @@ Chip8 myChip8;
 
 void chip8_reset()
 {
-   memset(myChip8.ram, 0, RAM_SIZE);
-   memset(myChip8.V, 0, V_REGISTERS);
-   memset(myChip8.stack, 0, MAX_STACK_LEVEL);
+   memset(myChip8.ram, 0, sizeof myChip8.ram);
+   memset(myChip8.V, 0, sizeof myChip8.V);
+   memset(myChip8.stack, 0, sizeof myChip8.stack);
    myChip8.I = 0;
    myChip8.PC = PROGRAM_START;
    myChip8.sp = 0;
@@ -19,7 +19,7 @@ void chip8_reset()
    myChip8.sound_timer = 0;
 }
 
-int chip8_load_rom(const char const *file_path) 
+int chip8_load_rom(const char* const file_path) 
 {
 	FILE *file = fopen(file_path, "rb");
 
@@ -74,6 +74,7 @@ void chip8_run_cycle()
       {
          if (opcode == 0x00E0)
          {
+            display_clear();
             printf("00E0 opcode\n");
          }
          else if (opcode == 0x00EE)
@@ -88,7 +89,7 @@ void chip8_run_cycle()
                printf("Empty stack, cannont return!\n");
             }
 
-            printf("00EE opcode\n", first_nibble);
+            printf("00EE opcode\n");
          }
          break;
       } 
@@ -175,7 +176,7 @@ void chip8_run_cycle()
 
          myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
 
-         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
+         printf("%01x %01x %02x opcode %d + %d = %d\n", first_nibble, X, NN, X, NN, X + NN); 
          break;
       }
       case 0x8: 
@@ -273,11 +274,17 @@ void chip8_run_cycle()
          uint8_t X = (opcode & 0x0F00) >> 8;
          uint8_t Y = (opcode & 0x00F0) >> 4;
          uint8_t N = (opcode & 0x000F);
+ 
+         myChip8.V[X] = myChip8.V[X] % PIXELS_W;
+         myChip8.V[Y] = myChip8.V[Y] % PIXELS_H;
 
-         printf("%01x %01x %01x %01x\n", first_nibble, X, Y, N); 
+         printf("%01x %01x %01x %01x opcode\n", first_nibble, X, Y, N); 
+         display_draw(myChip8.V[X], myChip8.V[Y], N);
+         
          break;
       }
       case 0xE: printf("E opcode\n"); break;
       case 0xF: printf("F opcode\n"); break;
+      default: printf("Invalid opcode encountered! %04x\n", opcode);
    }
 }

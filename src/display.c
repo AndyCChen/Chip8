@@ -93,8 +93,24 @@ void display_update()
    SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
    SDL_RenderClear(gRenderer);
 
-   SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-   SDL_RenderDrawRects(gRenderer, &Display, PIXELS_W * PIXELS_H);  // pixels_w  * pixels_h is the number of rectangles being drawn
+   for (int pixel_row = 0; pixel_row < PIXELS_H; ++pixel_row)
+   {
+      for (int pixel_col = 0; pixel_col < PIXELS_W; ++pixel_col)
+      {
+         // if pixel on set color to white
+         if (Display_buffer[( pixel_row * PIXELS_W) + pixel_col])
+         {
+            SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+            SDL_RenderFillRect(gRenderer, &Display[( pixel_row * PIXELS_W ) + pixel_col]);
+         }
+         // else pixel is off so we set color to black
+         else
+         {
+            SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+            SDL_RenderFillRect(gRenderer, &Display[( pixel_row * PIXELS_W ) + pixel_col]);
+         }
+      }
+   }
 
    SDL_RenderPresent(gRenderer);
 
@@ -111,7 +127,7 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
 
    uint8_t *sprite = &myChip8.ram[myChip8.I]; // sprite data at starting address I in ram
 
-   uint8_t *sprite_origin = &Display_buffer [( y_pos * PIXELS_W  ) + x_pos]; // initial position origin of sprite in the display
+   uint16_t display_sprite_origin = ( y_pos * PIXELS_W  ) + x_pos; // position in display buffer to draw sprite to
 
    // iterate through entire sprite byte by byte
    for(int sprite_byte = 0; sprite_byte < sprite_height; ++sprite_byte)
@@ -132,19 +148,20 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
          }
 
          // state of the display pixel that we wish to XOR with
-         uint8_t display_pixel_state = sprite_origin[( sprite_byte * sprite_width ) + sprite_bit];
-
+         uint8_t display_pixel_state = Display_buffer[display_sprite_origin + (sprite_byte * PIXELS_W) + sprite_bit];
+         
          // state of sprite pixel that we wish to XOR with
-         uint8_t sprite_pixel_state = sprite[sprite_byte] & ( 1 << ( 7 - sprite_bit ) );
-
-         // set VF flag if both states are on (eqauls 1)
+         uint8_t sprite_pixel_state = sprite[sprite_byte] & ( 1 << ( 7 - sprite_bit ) ); // extract the specific bit with a bitmask
+         sprite_pixel_state = sprite_pixel_state >> ( 7 - sprite_bit );
+   
+         // set VF flag if both states are on (equals 1)
          if (display_pixel_state == 1 && sprite_pixel_state == 1)
          {
             myChip8.V[0xF] = 1;
          }
 
          // xor display buffer pixel state with sprite pixel state
-         sprite_origin[(sprite_byte * sprite_width) + sprite_bit] = display_pixel_state ^ sprite_pixel_state;
+         Display_buffer[display_sprite_origin + (sprite_byte * PIXELS_W) + sprite_bit] = display_pixel_state ^ sprite_pixel_state;
       }
    }
 

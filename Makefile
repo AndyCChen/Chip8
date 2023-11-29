@@ -11,7 +11,7 @@ INCLUDE_PATHS = -IC:\chip8_lib\SDL\include\SDL2
 LIBRARY_PATHS = -LC:\chip8_lib\SDL\lib
 
 # compilier flags
-COMPILIER_FLAGS = -w
+COMPILIER_FLAGS = -Wall -Wextra
 
 # linker flags
 LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2
@@ -20,4 +20,4 @@ LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2
 OBJ_NAME = chip8
 
 all:
-	$(CC) $(OBJS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+	$(CC) $(OBJS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(COMPILIER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
