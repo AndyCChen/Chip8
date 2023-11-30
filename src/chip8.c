@@ -175,15 +175,14 @@ void chip8_run_cycle()
          uint16_t NN = opcode & 0x00FF;
 
          myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
-
-         printf("%01x %01x %02x opcode %d + %d = %d\n", first_nibble, X, NN, X, NN, X + NN); 
+ 
          break;
       }
       case 0x8: 
       {
          uint8_t last_nibble = opcode & 0x000F;
          uint8_t X = (opcode & 0x0F00) >> 8;
-         uint8_t Y = opcode & 0x00F0 >> 4;
+         uint8_t Y = (opcode & 0x00F0) >> 4;
 
          if (last_nibble == 0x0)
          {
@@ -219,22 +218,38 @@ void chip8_run_cycle()
          }
          else if (last_nibble == 0x5)
          {
+            // V[X] = V[X] - V[Y]
+            myChip8.V[X] = myChip8.V[X] - myChip8.V[Y];
 
+            // set register V[F] to 1 if V[X] > V[Y]
+            myChip8.V[0xF] = myChip8.V[X] > myChip8.V[Y];
          }
          else if (last_nibble == 0x6)
          {
+            // store least significant bit of V[Y] into V[F]
+            myChip8.V[0xF] = ( myChip8.V[Y] & 1 );
 
+            // right shift V[Y] by 1 bit and store result into V[X]
+            myChip8.V[X] = myChip8.V[Y] >> 1;
          }
          else if (last_nibble == 0x7)
          {
+            // V[X] = V[Y] - V[X]
+            myChip8.V[X] = myChip8.V[Y] - myChip8.V[X];
 
+            // set register V[F] to 1 if V[Y] > V[X]
+            myChip8.V[0xF] = myChip8.V[Y] > myChip8.V[X];
          }
          else if (last_nibble == 0xE)
          {
-            
+            // store most significant bit of V[Y] into V[F]
+            myChip8.V[0xF] = ( myChip8.V[Y] & (1 << 7) ) >> 7;
+
+            // left shitt V[Y] by 1 bit and store result into V[X]
+            myChip8.V[X] = myChip8.V[Y] << 1;
          }
 
-         printf("8 opcode\n"); 
+         printf("8 %01x %01x %01x opcode\n", X, Y, last_nibble); 
          break;
       }
       case 0x9: 
