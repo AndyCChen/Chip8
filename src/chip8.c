@@ -284,7 +284,73 @@ void chip8_run_cycle()
          break;
       }
       case 0xE: printf("E opcode\n"); break;
-      case 0xF: printf("F opcode\n"); break;
+      case 0xF: 
+      {
+         uint8_t X = (opcode & 0x0F00) >> 8;
+         uint8_t last_two_nibble = opcode & 0x00FF;
+
+         if (last_two_nibble == 0x07)
+         {
+            myChip8.V[X] = myChip8.delay_timer;
+         }
+         else if (last_two_nibble == 0x0A)
+         {
+            // wait for keypress and store in VX
+         }
+         else if (last_two_nibble == 0x15)
+         {
+            // set delay timer to value of register V[X]
+            myChip8.delay_timer = myChip8.V[X];
+         }
+         else if (last_two_nibble == 0x18)
+         {
+            // set sound timer to value of register V[X]
+            myChip8.sound_timer = myChip8.V[X];
+         }
+         else if (last_two_nibble == 0x1E)
+         {
+            // add value in register V[X] to register I
+            myChip8.I += myChip8.V[X];
+         }
+         else if (last_two_nibble == 0x29)
+         {
+            // set I to point to the font sprite corresponding to the hex value in V[X]
+
+         }
+         else if (last_two_nibble == 0x33)
+         {
+            // store the binary coded decimal of value in V[X] at: I, I + 1, I + 2
+            uint8_t decimal = myChip8.V[X];
+
+            uint8_t ones = decimal % 10;
+            uint8_t tens = ( ( decimal - ones ) % 100 ) / 10;
+            uint8_t hundreds =  ( ( decimal - ones ) - ( ( decimal - ones ) % 100 ) ) / 100;
+
+            myChip8.ram[myChip8.I] = hundreds;
+            myChip8.ram[myChip8.I + 1] = tens;
+            myChip8.ram[myChip8.I + 2] = ones;
+         }
+         else if (last_two_nibble == 0x55)
+         {
+            // load registers V[0] - V[X] into memory starting at address I
+            for (int index = 0; index <= X; ++index)
+            {
+               myChip8.ram[myChip8.I + index] = myChip8.V[index];
+            }
+         }
+         else if (last_two_nibble == 0x65)
+         {
+            // load values from memory starting at address I into registers V[0] - V[X]
+            for (int index = 0; index <= X; ++index)
+            {
+               myChip8.V[index] = myChip8.ram[myChip8.I + index];
+            }
+         }
+
+         printf("%01x %02x opcode\n", X, last_two_nibble); 
+   
+         break;
+      };
       default: printf("Invalid opcode encountered! %04x\n", opcode);
    }
 }
