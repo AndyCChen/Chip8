@@ -1,11 +1,20 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "../includes/chip8.h"
 #include "../includes/display.h"
 
+// global chip 8 instance
 Chip8 myChip8;
+
+/* holds the state of the 15 key on the keypad
+   each bit coresponds to a key that is in thatpressed or released state
+   0: released
+   1: pressed
+*/
+static uint16_t keypad = 0;
 
 void chip8_reset()
 {
@@ -89,7 +98,7 @@ void chip8_run_cycle()
                printf("Empty stack, cannont return!\n");
             }
 
-            printf("00EE opcode\n");
+            printf("00EE return from subroutine opcode\n");
          }
          break;
       } 
@@ -117,7 +126,7 @@ void chip8_run_cycle()
             printf("Stack overflow occured!\n");
          }
 
-         printf("%01x %03x\n", first_nibble, NNN); 
+         printf("%01x %03x Calling subroutine\n", first_nibble, NNN); 
          break;
       }
       case 0x3: 
@@ -176,6 +185,7 @@ void chip8_run_cycle()
 
          myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
  
+         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
          break;
       }
       case 0x8: 
@@ -211,42 +221,46 @@ void chip8_run_cycle()
          }
          else if (last_nibble == 0x4)
          {
+            // add VY to VX, will wrap on overflow because registers are unsigned
+            myChip8.V[X] += myChip8.V[Y]; 
+            
             // set register VF to 1 on overflow, otherwise set to 0
-            myChip8.V[0xF] = ( myChip8.V[X] + myChip8.V[Y] ) > 255;
-
-            myChip8.V[X] += myChip8.V[Y]; // add VY to VX, will wrap on overflow because registers are unsigned
+            myChip8.V[0xF] = ( myChip8.V[X] + myChip8.V[Y] ) > 255;      
          }
          else if (last_nibble == 0x5)
          {
+            //printf("%d - %d ", myChip8.V[X], myChip8.V[Y]);
             // V[X] = V[X] - V[Y]
             myChip8.V[X] = myChip8.V[X] - myChip8.V[Y];
-
-            // set register V[F] to 1 if V[X] > V[Y]
-            myChip8.V[0xF] = myChip8.V[X] > myChip8.V[Y];
+            //printf("= %d ", myChip8.V[X]);
+            // set register V[F] to 1 if V[X] >= V[Y]
+            myChip8.V[0xF] = ( myChip8.V[X] >= myChip8.V[Y] );
+            
+            //printf(" VF = %d ", myChip8.V[0xF]);
          }
          else if (last_nibble == 0x6)
          {
-            // store least significant bit of V[Y] into V[F]
-            myChip8.V[0xF] = ( myChip8.V[Y] & 1 );
-
             // right shift V[Y] by 1 bit and store result into V[X]
             myChip8.V[X] = myChip8.V[Y] >> 1;
+
+            // store least significant bit of V[Y] into V[F]
+            myChip8.V[0xF] = ( myChip8.V[Y] & 1 );
          }
          else if (last_nibble == 0x7)
          {
             // V[X] = V[Y] - V[X]
             myChip8.V[X] = myChip8.V[Y] - myChip8.V[X];
 
-            // set register V[F] to 1 if V[Y] > V[X]
-            myChip8.V[0xF] = myChip8.V[Y] > myChip8.V[X];
+            // set register V[F] to 1 if V[Y] >= V[X]
+            myChip8.V[0xF] = myChip8.V[Y] >= myChip8.V[X];
          }
          else if (last_nibble == 0xE)
          {
-            // store most significant bit of V[Y] into V[F]
-            myChip8.V[0xF] = ( myChip8.V[Y] & (1 << 7) ) >> 7;
-
             // left shitt V[Y] by 1 bit and store result into V[X]
             myChip8.V[X] = myChip8.V[Y] << 1;
+
+            // store most significant bit of V[Y] into V[F]
+            myChip8.V[0xF] = ( myChip8.V[Y] & (1 << 7) ) >> 7;
          }
 
          printf("8 %01x %01x %01x opcode\n", X, Y, last_nibble); 
@@ -283,7 +297,17 @@ void chip8_run_cycle()
          printf("%01x %03x opcode\n", first_nibble, NNN); 
          break;
       }
-      case 0xC: printf("C opcode\n"); break;
+      case 0xC: 
+      {
+         uint8_t X = ( opcode & 0x0F00 ) >> 8;
+         uint8_t NN = ( opcode & 0x00FF );
+
+         int random_number = rand();
+         myChip8.V[X] = random_number & NN;        
+
+         printf("C opcode\n"); 
+         break;
+      }
       case 0xD: 
       {
          uint8_t X = (opcode & 0x0F00) >> 8;
@@ -298,7 +322,28 @@ void chip8_run_cycle()
          
          break;
       }
-      case 0xE: printf("E opcode\n"); break;
+      case 0xE: 
+      {
+         uint8_t last_two_nibble = opcode & 0x00FF;
+         uint8_t X = ( opcode & 0x0F00 ) >> 8;
+
+         uint16_t mask = 1 << ( 15 - myChip8.V[X] );
+         uint8_t key = ( keypad & mask ) >> ( 15 - myChip8.V[X] );
+
+         if (last_two_nibble == 0x9E)
+         {
+            // skip next instruction if key with the hex value in V[X] is pressed
+            if (key) myChip8.PC += 2;
+         }
+         else if (last_two_nibble == 0xA1)
+         {
+            // skip next instruction if key with the hex value in V[X] is not pressed
+            if (!key) myChip8.PC += 2;
+         }
+
+         printf("%d key\n", key); 
+         break;
+      }
       case 0xF: 
       {
          uint8_t X = (opcode & 0x0F00) >> 8;
@@ -311,6 +356,7 @@ void chip8_run_cycle()
          else if (last_two_nibble == 0x0A)
          {
             // wait for keypress and store in VX
+            
          }
          else if (last_two_nibble == 0x15)
          {
@@ -368,4 +414,14 @@ void chip8_run_cycle()
       };
       default: printf("Invalid opcode encountered! %04x\n", opcode);
    }
+}
+
+void chip8_set_key_down(uint8_t key)
+{
+   keypad = keypad | ( 1 << ( 15 - key ) );
+}
+
+void chip8_set_key_up(uint8_t key)
+{
+   keypad = keypad ^ ( 1 << ( 15 - key ) );
 }

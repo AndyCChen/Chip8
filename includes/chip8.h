@@ -39,4 +39,10 @@ int chip8_load_rom(const char* const);
 // a single cycle to fetch, decode, and execute one instruction
 void chip8_run_cycle();
 
+// sets a key to be in the pressed state
+void chip8_set_key_down(uint8_t key);
+
+// sets a key to be in the released state
+void chip8_set_key_up(uint8_t key);
+
 #endif
