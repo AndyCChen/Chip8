@@ -1,11 +1,17 @@
 #ifndef CHIP8_H
 #define CHIP8_H 
 
-// max size in bytes for chip8 ram
+/*
+	max size in bytes for chip8 ram
+	addresses 0x000 - 0x1FF are reserved
+*/
 #define RAM_SIZE 4096
 
 // programs are loaded into address 0x200 (byte 512)
-#define PROGRAM_START 512
+#define PROGRAM_START 0x200
+
+// starting address in ram to load the built in font
+#define FONT_START 0x050
 
 // number of general purpose registers
 #define V_REGISTERS 16
@@ -26,7 +32,10 @@ typedef struct {
 
 extern Chip8 myChip8;
 
-// resets all chip8 registers and timers
+/* 
+	resets all chip8 registers and timers
+	also loads in the font at address 0x050
+*/
 void chip8_reset();
 
 /**
@@ -39,10 +48,19 @@ int chip8_load_rom(const char* const);
 // a single cycle to fetch, decode, and execute one instruction
 void chip8_run_cycle();
 
+void chip8_decrement_delay_timer();
+
+void chip8_decrement_sound_timer();
+
 // sets a key to be in the pressed state
 void chip8_set_key_down(uint8_t key);
 
 // sets a key to be in the released state
 void chip8_set_key_up(uint8_t key);
+
+// basic debug utils
+
+// returns the log message for the disasembler
+char* chip8_get_disaembler_log();
 
 #endif

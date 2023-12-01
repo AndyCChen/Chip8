@@ -2,19 +2,50 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "../includes/chip8.h"
 #include "../includes/display.h"
 
+// max length of the disassembler log buffer
+#define DSAM_LOG_SIZE 255
+
+// string containing info on what instruction is being executed in the current cycle
+const char *disasembler_log[DSAM_LOG_SIZE];
+
 // global chip 8 instance
 Chip8 myChip8;
 
-/* holds the state of the 15 key on the keypad
-   each bit coresponds to a key that is in thatpressed or released state
+/* holds the states of the 15 key on the keypad
+   each bit coresponds to a key that is in the pressed or released state
    0: released
    1: pressed
 */
 static uint16_t keypad = 0;
+
+// holds the hex value of the key that was last pressed
+static uint8_t pressed_key;
+
+// fonts representing the numbers 0x0 - 0xF
+static uint8_t fonts = 
+{
+   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+   0x20, 0x60, 0x20, 0x20, 0x70, // 1
+   0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+   0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+   0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+   0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+   0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+   0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+   0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+   0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+   0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+   0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+   0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+   0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+   0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
 
 void chip8_reset()
 {
@@ -26,6 +57,9 @@ void chip8_reset()
    myChip8.sp = 0;
    myChip8.delay_timer = 0;
    myChip8.sound_timer = 0;
+
+   // load the font into address 0x050 in ram
+   memcpy(&myChip8.ram[FONT_START], fonts, sizeof fonts);
 }
 
 int chip8_load_rom(const char* const file_path) 
@@ -73,6 +107,7 @@ void chip8_run_cycle()
    // first 4 bits (nibble) of a opcode
    uint8_t first_nibble = (opcode & 0xF000) >> 12;
    printf("%04x %04x ", myChip8.PC, opcode);
+   int dsam_log_offset = snprintf(disasembler_log, DSAM_LOG_SIZE, "%04x %04x ", myChip8.PC, opcode);
 
    // increment program counter to point to next intruction (next 2 bytes)
    myChip8.PC += 2;
@@ -85,6 +120,7 @@ void chip8_run_cycle()
          {
             display_clear();
             printf("00E0 opcode\n");
+            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "CLEAR SCREEN\n");
          }
          else if (opcode == 0x00EE)
          {
@@ -95,10 +131,8 @@ void chip8_run_cycle()
             }
             else
             {
-               printf("Empty stack, cannont return!\n");
+               snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "Empty stack, cannont return!\n");
             }
-
-            printf("00EE return from subroutine opcode\n");
          }
          break;
       } 
@@ -107,7 +141,7 @@ void chip8_run_cycle()
          uint16_t NNN = opcode & 0x0FFF;
          myChip8.PC = NNN; // jump to address NNN
 
-         printf("%01x %03x\n", first_nibble, NNN); 
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "JUMP to NNN: %03x\n", NNN); 
          break;
       }
       case 0x2: 
@@ -123,10 +157,10 @@ void chip8_run_cycle()
          }
          else 
          {
-            printf("Stack overflow occured!\n");
+            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "Stack overflow occured!\n");
          }
 
-         printf("%01x %03x Calling subroutine\n", first_nibble, NNN); 
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "Call Subroutine at NNN: %03x\n", NNN); 
          break;
       }
       case 0x3: 
@@ -139,7 +173,7 @@ void chip8_run_cycle()
             myChip8.PC += 2; // skip next intruction if V[X] equals NN
          }
 
-         printf("%01x %01x %02x\n", first_nibble, X, NN); 
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "SKIP if VX: %d == NN %d\n", myChip8.V[X], NN); 
          break;
       }
       case 0x4: 
@@ -152,7 +186,7 @@ void chip8_run_cycle()
             myChip8.PC += 2; // skip next instruction if V[X] not equals NN
          }
 
-         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "SKIP if VX: %d != NN: %d\n", myChip8.V[X], NN); 
          break;
       }
       case 0x5: 
@@ -165,7 +199,7 @@ void chip8_run_cycle()
             myChip8.PC += 2; // skip next instruction if V[X] equals V[Y]
          }
 
-         printf("%01x %01x %01x opcode\n", first_nibble, X, Y);
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "SKIP if VX: %d == VY: %d\n", myChip8.V[X], myChip8.V[Y]);
          break;
       }
       case 0x6: 
@@ -175,7 +209,7 @@ void chip8_run_cycle()
 
          myChip8.V[X] = NN; // load register V[X] with 8 bit immediate NN
 
-         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "LOAD VX: %d with NN: %d\n", myChip8.V[X], NN); 
          break;
       }
       case 0x7: 
@@ -185,7 +219,7 @@ void chip8_run_cycle()
 
          myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
  
-         printf("%01x %01x %02x opcode\n", first_nibble, X, NN); 
+         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "ADD NN: %d into VX: %d\n", NN, myChip8.V[X]); 
          break;
       }
       case 0x8: 
@@ -256,7 +290,7 @@ void chip8_run_cycle()
          }
          else if (last_nibble == 0xE)
          {
-            // left shitt V[Y] by 1 bit and store result into V[X]
+            // left shift V[Y] by 1 bit and store result into V[X]
             myChip8.V[X] = myChip8.V[Y] << 1;
 
             // store most significant bit of V[Y] into V[F]
@@ -327,18 +361,18 @@ void chip8_run_cycle()
          uint8_t last_two_nibble = opcode & 0x00FF;
          uint8_t X = ( opcode & 0x0F00 ) >> 8;
 
-         uint16_t mask = 1 << ( 15 - myChip8.V[X] );
-         uint8_t key = ( keypad & mask ) >> ( 15 - myChip8.V[X] );
+         uint16_t mask = 1 << ( myChip8.V[X] );
+         uint8_t key = ( keypad & mask ) >> ( myChip8.V[X] );
 
          if (last_two_nibble == 0x9E)
          {
             // skip next instruction if key with the hex value in V[X] is pressed
-            if (key) myChip8.PC += 2;
+            if (key == 1) myChip8.PC += 2;
          }
          else if (last_two_nibble == 0xA1)
          {
             // skip next instruction if key with the hex value in V[X] is not pressed
-            if (!key) myChip8.PC += 2;
+            if (key == 0) myChip8.PC += 2;
          }
 
          printf("%d key\n", key); 
@@ -356,7 +390,10 @@ void chip8_run_cycle()
          else if (last_two_nibble == 0x0A)
          {
             // wait for keypress and store in VX
-
+            // when keypad is zero it means no keys are being pressed
+            // so we decrement program counter to wait for a key press again
+            if ( keypad == 0 ) myChip8.PC -= 2;
+            else myChip8.V[X] = pressed_key; // else we set V[X] to the key that last was pressed
          }
          else if (last_two_nibble == 0x15)
          {
@@ -376,7 +413,8 @@ void chip8_run_cycle()
          else if (last_two_nibble == 0x29)
          {
             // set I to point to the font sprite corresponding to the hex value in V[X]
-
+            // multiply by 5 because fonts are 5 pixels high
+            myChip8.I = FONT_START + ( 5 * myChip8.V[X] );
          }
          else if (last_two_nibble == 0x33)
          {
@@ -418,10 +456,17 @@ void chip8_run_cycle()
 
 void chip8_set_key_down(uint8_t key)
 {
-   keypad = keypad | ( 1 << ( 15 - key ) );
+   keypad = keypad | ( 1 << key );
+   pressed_key = key;
 }
 
 void chip8_set_key_up(uint8_t key)
 {
-   keypad = keypad & ~( 1 << ( 15 - key ) );
+   keypad = keypad & ~( 1 << key );
+}
+
+
+char* chip8_get_disaembler_log()
+{
+   return disasembler_log;
 }
