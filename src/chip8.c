@@ -356,7 +356,7 @@ void chip8_run_cycle()
          else if (last_two_nibble == 0x0A)
          {
             // wait for keypress and store in VX
-            
+
          }
          else if (last_two_nibble == 0x15)
          {
@@ -423,5 +423,5 @@ void chip8_set_key_down(uint8_t key)
 
 void chip8_set_key_up(uint8_t key)
 {
-   keypad = keypad ^ ( 1 << ( 15 - key ) );
+   keypad = keypad & ~( 1 << ( 15 - key ) );
 }
