@@ -51,10 +51,10 @@ int main( int argc, char *argv[])
 	SDL_Event e;
    bool quit = false; 
 
-	float delta_time = 0; // seconds passed in beween loop iterations
+	// timers to lock chip8 speed into a specified clock speed
 
-	// number of clock ticks elapsed since epoch
-	clock_t current_time;
+	float delta_time = 0; // seconds passed in beween loop iterations
+	clock_t current_time; 
 	clock_t previous_time = clock();
 
 	// main loop
@@ -75,7 +75,6 @@ int main( int argc, char *argv[])
 			{
 				process_key_input_up(&e);
 			}
-
       }
       
 		current_time = clock();
@@ -83,7 +82,7 @@ int main( int argc, char *argv[])
 		previous_time = current_time;
 
 		// this loop runs at specified hertz rate
-		while ( delta_time >= (float) 1 / 5000 )
+		while ( delta_time >= (float) 1 / 500 )
 		{
 			chip8_run_cycle();
 			
@@ -93,7 +92,7 @@ int main( int argc, char *argv[])
 				display_update();
 			}
 				
-			delta_time -= (float) 1 / 5000;
+			delta_time -= (float) 1 / 500;
 		}
    }
 
