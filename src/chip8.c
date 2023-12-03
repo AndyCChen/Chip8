@@ -98,7 +98,7 @@ int chip8_load_rom(const char* const file_path)
    return bytes_read;
 }
 
-void chip8_run_cycle()
+void chip8_run_cycle(bool log_flag)
 {
    // fetch 16 bit opcode
    uint16_t opcode = myChip8.ram[myChip8.PC];     // grab first 8 bits of opcode
@@ -479,7 +479,7 @@ void chip8_run_cycle()
    chip8_decrement_delay_timer();
    chip8_decrement_sound_timer();
 
-   if (0) printf("%s", disasembler_log);
+   if (log_flag) printf("%s", disasembler_log);
 }
 
 void chip8_set_key_down(uint8_t key)

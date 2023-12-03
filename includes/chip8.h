@@ -1,6 +1,8 @@
 #ifndef CHIP8_H
 #define CHIP8_H 
 
+#include <stdbool.h>
+
 /*
 	max size in bytes for chip8 ram
 	addresses 0x000 - 0x1FF are reserved
@@ -46,7 +48,7 @@ void chip8_reset();
 int chip8_load_rom(const char* const);
 
 // a single cycle to fetch, decode, and execute one instruction
-void chip8_run_cycle();
+void chip8_run_cycle(bool log_flag);
 
 // decrements delay timer at 60hz when it is non zero
 void chip8_decrement_delay_timer();

@@ -19,32 +19,76 @@ int main( int argc, char *argv[])
 	srand(time(NULL));
 
 	// default clock speed is 500 hz
-	//uint32_t chip8_clock_speed = 500;
+	uint32_t chip8_clock_rate = 500;
 
 	// default scaling factor of the 64 by 32 pixel display
 	// 15 is the default
-	//uint32_t display_scale =  15;
+	uint32_t display_scale =  15;
 
-	// path to a .ch8 rom, is a required argument
-	//const char *path = "";
+	// begin handling command line arguments with getopt
+	extern char *optarg;
+	int option;
+	int clock_rate_flag = 0, display_scale_flag = 0, rom_path_flag = 0;
+	bool log_flag = false;
+	const char *rom_path_arg = NULL, *clock_rate_arg = NULL, *display_scale_arg = NULL;
 
-	if (argc == 1)
+	while ( ( option = getopt(argc, argv, "c:d:p:l") ) != -1 )
 	{
-		printf("Missing rom path argument!\n");
+		switch ( option )
+		{
+			case 'c': 
+			{
+				clock_rate_flag = 1;
+				clock_rate_arg = optarg;
+				break;
+			}
+			case 'd': 
+			{
+				display_scale_flag = 1;
+				display_scale_arg = optarg;
+				break;
+			}
+			case 'p':
+			{
+				rom_path_flag = 1;
+				rom_path_arg = optarg;
+				break;
+			}
+			case 'l': log_flag = true; break;
+			default:
+			{
+				printf("Usage: %s [-p rom_path] [-c clock_rate] [-d display_scale]\n", argv[0]);
+				printf("-p sets the path to the rom to run, is a required argument\n");
+				printf("-c set the clock rate, is optional and defaults to %d hz\n", chip8_clock_rate);
+				printf("-d sets the display scale size, is optional defaults to %d\n", display_scale);
+				printf("-l enables the disassembler logs to the console\n");
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	if (rom_path_flag == 0)
+	{
+		printf("Missing [-p rom_path] arugment!\n");
 		return EXIT_FAILURE;
 	}
-	
+
+	if (clock_rate_flag == 1) chip8_clock_rate = atoi(clock_rate_arg);
+
+	if (display_scale_flag == 1) display_scale = atoi(display_scale_arg);
+
+	// end command line handling
+
 	// initialize chip8
 	chip8_reset();
 
-	if (!chip8_load_rom(argv[1]))
-	{
-		return EXIT_FAILURE;
-	}
+	// attempt to load rom file into chip8 ram
+	if (!chip8_load_rom(rom_path_arg)) return EXIT_FAILURE;
 
 	printf("program loaded!\n");
 
-	if (display_init(18) < 0) {
+	// initialize display scaled to the display scale factor,default value of 15
+	if (display_init(display_scale) < 0) {
 		return EXIT_FAILURE;
 	}
 
@@ -82,9 +126,9 @@ int main( int argc, char *argv[])
 		previous_time = current_time;
 
 		// this loop runs at specified hertz rate
-		while ( delta_time >= (float) 1 / 500 )
+		while ( delta_time >= (float) 1 / chip8_clock_rate )
 		{
-			chip8_run_cycle();
+			chip8_run_cycle(log_flag);
 			
 			// update display if update flag is set to true by the draw or clear instructions
 			if ( display_get_update_flag() )
@@ -92,7 +136,7 @@ int main( int argc, char *argv[])
 				display_update();
 			}
 				
-			delta_time -= (float) 1 / 500;
+			delta_time -= (float) 1 / chip8_clock_rate;
 		}
    }
 
@@ -129,7 +173,7 @@ void process_key_input_up(SDL_Event *e)
 {
 	switch ( e->key.keysym.scancode )
 	{
-		case SDL_SCANCODE_1: chip8_set_key_up(0x1); printf("1 up\n"); break;
+		case SDL_SCANCODE_1: chip8_set_key_up(0x1); break;
 		case SDL_SCANCODE_2: chip8_set_key_up(0x2); break;
 		case SDL_SCANCODE_3: chip8_set_key_up(0x3); break;
 		case SDL_SCANCODE_4: chip8_set_key_up(0xC); break;
