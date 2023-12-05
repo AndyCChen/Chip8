@@ -479,6 +479,8 @@ void chip8_run_cycle(bool log_flag)
    chip8_decrement_delay_timer();
    chip8_decrement_sound_timer();
 
+   if ( display_get_update_flag() ) display_update();
+
    if (log_flag) printf("%s", disasembler_log);
 }
 

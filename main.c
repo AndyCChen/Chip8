@@ -14,6 +14,9 @@ void process_key_input_down(SDL_Event *e);
 // process key inputs when key is released
 void process_key_input_up(SDL_Event *e); 
 
+// pressing f5 will pause the main loop
+static bool pause_flag = false, cycle_step_flag = false;
+
 int main( int argc, char *argv[])
 {
 	srand(time(NULL));
@@ -88,12 +91,10 @@ int main( int argc, char *argv[])
 	printf("program loaded!\n");
 
 	// initialize display scaled to the display scale factor,default value of 15
-	if (display_init(display_scale) < 0) {
-		return EXIT_FAILURE;
-	}
+	if (display_init(display_scale) < 0) return EXIT_FAILURE;
 
 	SDL_Event e;
-   bool quit = false; 
+   bool quit_flag = false; 
 
 	// timers to lock chip8 speed into a specified clock speed
 
@@ -102,14 +103,28 @@ int main( int argc, char *argv[])
 	clock_t previous_time = clock();
 
 	// main loop
-   while(!quit)
+   while(!quit_flag)
    { 
-      while(SDL_PollEvent( &e ))
+		current_time = clock();
+		delta_time +=  (float) ( current_time - previous_time ) / CLOCKS_PER_SEC;
+		if ( delta_time >= 0.1 ) delta_time = 0.1; // limit delta time to 100ms
+		previous_time = current_time;
+
+		// this loop runs at specified hertz rate
+		while ( delta_time >= (float) 1 / chip8_clock_rate )
+		{
+			chip8_run_cycle(log_flag);
+				
+			delta_time -= (float) 1 / chip8_clock_rate;
+		}
+
+		// process possible sdl events in the window
+		while(SDL_PollEvent( &e ) || pause_flag)
       { 
-         //printf("polling\n");
          if (e.type == SDL_QUIT)
          {  
-				quit = true;
+				quit_flag = true;
+				break;
 			}
 			else if (e.type == SDL_KEYDOWN)
 			{	
@@ -119,25 +134,13 @@ int main( int argc, char *argv[])
 			{
 				process_key_input_up(&e);
 			}
-      }
-      
-		current_time = clock();
-		delta_time +=  (float) ( current_time - previous_time ) / CLOCKS_PER_SEC;
-		previous_time = current_time;
 
-		// this loop runs at specified hertz rate
-		while ( delta_time >= (float) 1 / chip8_clock_rate )
-		{
-			chip8_run_cycle(log_flag);
-			
-			// update display if update flag is set to true by the draw or clear instructions
-			if ( display_get_update_flag() )
+			if (pause_flag && cycle_step_flag)
 			{
-				display_update();
+				chip8_run_cycle(log_flag);
+				cycle_step_flag = false;
 			}
-				
-			delta_time -= (float) 1 / chip8_clock_rate;
-		}
+      }
    }
 
 	display_close();
@@ -165,6 +168,13 @@ void process_key_input_down(SDL_Event *e)
 		case SDL_SCANCODE_X: chip8_set_key_down(0x0); break;
 		case SDL_SCANCODE_C: chip8_set_key_down(0xB); break;
 		case SDL_SCANCODE_V: chip8_set_key_down(0xF); break;
+		case SDL_SCANCODE_F5: 
+		{
+			pause_flag = !pause_flag;
+			if (pause_flag) printf("Paused, press space to step through a single instruction or press f5 again to resume.\n"); 
+			break;
+		}
+		case SDL_SCANCODE_SPACE: cycle_step_flag = true; break;
 		default: break;
 	}
 }
