@@ -261,50 +261,62 @@ void chip8_run_cycle(bool log_flag)
          {
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY4 ADD VX: %d VY: %d\n", myChip8.V[X],  myChip8.V[Y]); 
 
+            uint8_t  first_operand = myChip8.V[X]; // save value of VX for overflow check later
+
             // add VY to VX, will wrap on overflow because registers are unsigned
             myChip8.V[X] += myChip8.V[Y]; 
             
             // set register VF to 1 on overflow, otherwise set to 0
-            myChip8.V[0xF] = ( myChip8.V[X] + myChip8.V[Y] ) > 255; 
+            myChip8.V[0xF] = ( first_operand + myChip8.V[Y]) > 255; 
          }
          else if (last_nibble == 0x5)
          {
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY5 SUB VX: %d VY: %d\n", myChip8.V[X], myChip8.V[Y]);
 
+            uint8_t minuend = myChip8.V[X];
+            uint8_t subtrahend = myChip8.V[Y];
+
             // V[X] = V[X] - V[Y]
-            myChip8.V[X] = myChip8.V[X] - myChip8.V[Y];
+            myChip8.V[X] = minuend - subtrahend;
             // set register V[F] to 1 if V[X] >= V[Y]
-            myChip8.V[0xF] = ( myChip8.V[X] >= myChip8.V[Y] );
+            myChip8.V[0xF] = ( minuend >= subtrahend );
          }
          else if (last_nibble == 0x6)
          {
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY6 RIGHT SHIFT 1 bit VY INTO VX\n");
 
+            uint8_t VY_temp = myChip8.V[Y];
+
             // right shift V[Y] by 1 bit and store result into V[X]
             myChip8.V[X] = myChip8.V[Y] >> 1;
 
             // store least significant bit of V[Y] into V[F]
-            myChip8.V[0xF] = ( myChip8.V[Y] & 1 );
+            myChip8.V[0xF] = VY_temp & 1 ;
          }
          else if (last_nibble == 0x7)
          { 
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY7 SUB VY: %d VX: %d\n", myChip8.V[Y], myChip8.V[X]);
 
+            uint8_t minuend = myChip8.V[Y];
+            uint8_t subtrahend = myChip8.V[X];
+
             // V[X] = V[Y] - V[X]
-            myChip8.V[X] = myChip8.V[Y] - myChip8.V[X];
+            myChip8.V[X] = minuend - subtrahend;
 
             // set register V[F] to 1 if V[Y] >= V[X]
-            myChip8.V[0xF] = myChip8.V[Y] >= myChip8.V[X];
+            myChip8.V[0xF] = minuend >= subtrahend;
          }
          else if (last_nibble == 0xE)
          {
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XYE RIGHT SHIFT 1 bit VY INTO VX\n");
 
+            uint8_t VY_temp = myChip8.V[Y];
+
             // left shift V[Y] by 1 bit and store result into V[X]
             myChip8.V[X] = myChip8.V[Y] << 1;
 
             // store most significant bit of V[Y] into V[F]
-            myChip8.V[0xF] = ( myChip8.V[Y] & (1 << 7) ) >> 7;
+            myChip8.V[0xF] = ( VY_temp & (1 << 7) ) >> 7;
          }
 
          break;
