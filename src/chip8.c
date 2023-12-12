@@ -488,8 +488,7 @@ void chip8_run_cycle(bool log_flag)
    }
 
    // decrement timers every cycle
-   chip8_decrement_delay_timer();
-   chip8_decrement_sound_timer();
+   chip8_update_timers();
 
    if ( display_get_update_flag() ) display_update();
 
@@ -507,7 +506,7 @@ void chip8_set_key_up(uint8_t key)
    keypad = keypad & ~( 1 << key );
 }
 
-void chip8_decrement_delay_timer()
+void chip8_update_timers()
 {
    static float dt = 0;
    static clock_t current_time, previous_time = 0;
@@ -519,23 +518,13 @@ void chip8_decrement_delay_timer()
    while (dt >= (float) 1 / 60)
    {
       if (myChip8.delay_timer > 0) myChip8.delay_timer -= 1;
-
-      dt -= (float) 1 / 60;
-   }
-}
-
-void chip8_decrement_sound_timer()
-{
-   static float dt = 0;
-   static clock_t current_time, previous_time = 0;
-
-   current_time = clock();
-   dt += (float) ( current_time - previous_time ) / CLOCKS_PER_SEC;
-   previous_time = current_time;
-
-   while (dt >= (float) 1 / 60)
-   {
       if (myChip8.sound_timer > 0) myChip8.sound_timer -= 1;
+
+      // play beep audio when sound timer is not zero
+      if (myChip8.sound_timer > 0) 
+         display_pause_audio_device(0);
+      else 
+         display_pause_audio_device(1);
 
       dt -= (float) 1 / 60;
    }

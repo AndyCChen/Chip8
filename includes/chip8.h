@@ -50,11 +50,8 @@ int chip8_load_rom(const char* const);
 // a single cycle to fetch, decode, and execute one instruction
 void chip8_run_cycle(bool log_flag);
 
-// decrements delay timer at 60hz when it is non zero
-void chip8_decrement_delay_timer();
-
-// decrements sound timer at 60hz when it is non zero
-void chip8_decrement_sound_timer();
+// decrements delay and sound timers at 60hz when it is non zero
+void chip8_update_timers();
 
 // sets a key to be in the pressed state
 void chip8_set_key_down(uint8_t key);
