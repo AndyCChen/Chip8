@@ -6,8 +6,17 @@
 // contains all utilities for I/O of display for chip8
 
 // chip8 display resolution is 64 by 32 pixels
+
 #define PIXELS_W 64
 #define PIXELS_H 32
+
+// audio settings for square wave beep generator
+
+#define VOLUME 3000
+#define SAMPLES_PER_SEC 44100
+#define FREQUENCY 256 // freq in hz
+#define PERIOD ( SAMPLES_PER_SEC / FREQUENCY ) // number of samples in a period
+#define HALF_PERIOD  ( PERIOD / 2 ) // number of samples that a wave is held low or high
 
 // initialize the display
 // return 0 on success else return negative value
@@ -31,5 +40,8 @@ void display_clear();
 // returns the update flag
 // true if the display needs to be updated, else is false
 bool display_get_update_flag();
+
+// pause_on: non-zero to pause audio, 0 to unpause
+void display_pause_audio_device(int pause_on);
 
 #endif

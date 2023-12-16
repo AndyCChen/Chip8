@@ -5,10 +5,10 @@ OBJS = main.c src/chip8.c src/display.c
 CC = gcc
 
 # includes paths
-INCLUDE_PATHS = -IC:\chip8_lib\SDL\include\SDL2
+INCLUDE_PATHS = -IC:\Emu_Dev\SDL\include\SDL2
 
 # library paths
-LIBRARY_PATHS = -LC:\chip8_lib\SDL\lib
+LIBRARY_PATHS = -LC:\Emu_Dev\SDL\lib
 
 # compilier flags
 COMPILIER_FLAGS = -Wall -Wextra

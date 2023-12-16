@@ -8,8 +8,8 @@
 static SDL_Window *gWindow = NULL;
 static SDL_Renderer *gRenderer = NULL;
 
-static int SCREEN_WIDTH = PIXELS_W;
-static int SCREEN_HEIGHT = PIXELS_H;
+static SDL_AudioSpec want, have;
+static SDL_AudioDeviceID device_id;
 
 // array of rectangles representing a pixel for the display
 static SDL_Rect Display [PIXELS_W * PIXELS_H];
@@ -22,14 +22,30 @@ static uint8_t Display_buffer [PIXELS_W * PIXELS_H];
 // flag that is used by draw and clear instructions to signal when the display needs to be updated
 static bool update_flag = false;
 
+// callback for sdl to use for generating sound
+static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
+{
+   Sint16 *audioBuffer = (Sint16*) stream;
+   int audioBufferLength = streamSize / 2; // streamSize in bytes divide by 2 for length of 16 bit int array
+   size_t *runningSampleIndex = (size_t*) userdata; // track the current sample across writes to the buffer
+   int sampleValue;
+
+   for (int sampleIndex = 0; sampleIndex < audioBufferLength; ++sampleIndex)
+   {
+      sampleValue = ( ( *runningSampleIndex / HALF_PERIOD ) % 2 ) ? VOLUME : -VOLUME;
+      audioBuffer[sampleIndex] = sampleValue;
+      (*runningSampleIndex)++;
+   }
+}
+
 int display_init(int display_scale_factor)
 {
    // scale up resolution based on scale factor
-   SCREEN_WIDTH *= display_scale_factor;
-   SCREEN_HEIGHT  *= display_scale_factor;
+   const int SCREEN_WIDTH = PIXELS_W * display_scale_factor;
+   const int SCREEN_HEIGHT = PIXELS_H * display_scale_factor;
 
    // initialize SDL
-   if (SDL_Init(SDL_INIT_VIDEO) < 0)
+   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
    {
       printf("SDL could not initialize! SDL Error %s\n", SDL_GetError());
       return -1;
@@ -74,6 +90,31 @@ int display_init(int display_scale_factor)
       };
    }
 
+   // initialize sdl audio
+
+   static size_t runningSampleIndex = 0; // track the current sample across writes to the buffer
+
+   SDL_memset( &want, 0, sizeof( want ) );
+   want.freq = SAMPLES_PER_SEC;
+   want.format = AUDIO_S16SYS;
+   want.channels = 1;
+   want.samples = 2048;
+   want.callback = audio_callback;
+   want.userdata = &runningSampleIndex;
+   
+   // attempt to open audio device, error if it returns 0
+   if ( ( device_id = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0) ) == 0 )
+   {
+      printf("SDL could not get an audio device! SDL Error: %s\n", SDL_GetError());
+      return -1;
+   }
+   
+   if (have.format != AUDIO_S16SYS)
+   {
+      printf("SDL could not get desired audio format! SDL Error: %s\n", SDL_GetError());
+      return -1;
+   }
+
    return 0;
 }
 
@@ -83,6 +124,8 @@ void display_close()
    SDL_DestroyWindow(gWindow);
    gRenderer = NULL;
    gWindow = NULL;
+
+   SDL_CloseAudioDevice(device_id);
 
    SDL_Quit();
    printf("closing sdl!\n");
@@ -181,4 +224,9 @@ void display_clear()
 bool display_get_update_flag()
 {
    return update_flag;
+}
+
+void display_pause_audio_device(int pause_on)
+{
+   SDL_PauseAudioDevice(device_id, pause_on);
 }
