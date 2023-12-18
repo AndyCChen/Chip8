@@ -27,6 +27,9 @@ static uint16_t keypad = 0;
 // holds the hex value of the key that was last pressed
 static uint8_t pressed_key;
 
+// flag to check if a key was released in previous frame
+static bool is_key_released = false;
+
 // fonts representing the numbers 0x0 - 0xF
 static uint8_t fonts[] = 
 {
@@ -386,12 +389,16 @@ void chip8_run_cycle(bool log_flag)
          {
             // skip next instruction if key with the hex value in V[X] is pressed
             if (key == 1) myChip8.PC += 2;
+            is_key_released = false;
+            
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "EX9E SKIP IF key %1x is pressed\n", myChip8.V[X]);
          }
          else if (last_two_nibble == 0xA1)
          {
             // skip next instruction if key with the hex value in V[X] is not pressed
             if (key == 0) myChip8.PC += 2;
+            is_key_released = false;
+
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "EXA1 SKIP IF key %1x not pressed\n", myChip8.V[X]);
          }
 
@@ -409,11 +416,15 @@ void chip8_run_cycle(bool log_flag)
          }
          else if (last_two_nibble == 0x0A)
          {
-            // wait for keypress and store in VX
+            // wait for key release and store released key in VX
             // when keypad is zero it means no keys are being pressed
             // so we decrement program counter to wait for a key press again
-            if ( keypad == 0 ) myChip8.PC -= 2;
-            else myChip8.V[X] = pressed_key; // else we set V[X] to the key that last was pressed
+            if ( !is_key_released ) myChip8.PC -= 2;
+            else 
+            {
+               myChip8.V[X] = pressed_key; // else we set V[X] to the key that last was pressed
+               is_key_released = false;    // reset flag back to false
+            }
 
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX0A WAIT for keypress and store in VX\n");
          }
@@ -504,6 +515,7 @@ void chip8_set_key_down(uint8_t key)
 void chip8_set_key_up(uint8_t key)
 {
    keypad = keypad & ~( 1 << key );
+   is_key_released = true;
 }
 
 void chip8_update_timers()
