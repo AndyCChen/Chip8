@@ -151,6 +151,11 @@ void display_update()
    }
 }
 
+void display_present()
+{
+   SDL_RenderPresent(gRenderer);
+}
+
 void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
 {
    // first clear the VF flag incase it was previously set to 1
@@ -200,6 +205,12 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
 }
 
 void display_clear()
+{
+   SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+   SDL_RenderClear(gRenderer);
+}
+
+void display_clear_buffer()
 {
    // set all display pixels to off state
    memset(Display_buffer, 0, PIXELS_H * PIXELS_W);

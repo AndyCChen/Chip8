@@ -57,6 +57,7 @@ int main( int argc, char *argv[])
    while(!quit_flag)
    { 
 		restart:
+		
 		// process sdl events in the window
 		gui_input_begin();
 		while(SDL_PollEvent( &event ))
@@ -92,8 +93,12 @@ int main( int argc, char *argv[])
 				cycle_step_flag = false;
 			}
 
-			gui_create_and_update();
-			goto restart;
+			gui_create_widgets(); // declare and initialize gui elements
+			display_clear();      // clear the display before draw
+			display_update();     // set render rectangles (pixels) with display buffer 
+			gui_draw();           // draw the gui elements
+			display_present();    // finally present the render to display
+			goto restart;         // jump back up to restart so we can continually poll events while paused
 		}
 
 		// main chip8 loop process
@@ -109,7 +114,12 @@ int main( int argc, char *argv[])
 				
 			delta_time -= (float) 1 / chip8_clock_rate;
 		}
-		gui_create_and_update();
+
+		gui_create_widgets(); // declare and initialize gui elements
+		display_clear();      // clear the display before draw
+		display_update();     // set render rectangles (pixels) to correct the color with display buffer 
+		gui_draw();           // draw the gui elements
+		display_present();    // finally present the render to display
    }
 
 	gui_close();

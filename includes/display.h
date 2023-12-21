@@ -28,7 +28,7 @@ int display_init(int);
 // free memory
 void display_close();
 
-// update display with buffer
+// update pixel states with the display buffer
 void display_update();
 
 // draw to the display buffer
@@ -36,8 +36,13 @@ void display_update();
 // and the height of the sprite ranging from 1-15 pixels
 void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height);
 
-// set all display pixels to off
+// call SDL_RenderClear directly to clear the display
+// does not affect the display buffer
 void display_clear();
+
+// clear display buffer so that a subsequent call to display update will clear the screen
+// call display_clear to clear the screen
+void display_clear_buffer();
 
 // pause_on: non-zero to pause audio, 0 to unpause
 void display_pause_audio_device(int pause_on);
@@ -45,5 +50,8 @@ void display_pause_audio_device(int pause_on);
 SDL_Window *display_get_window();
 
 SDL_Renderer *display_get_renderer();
+
+// present renderer to the display by calling SDL_RenderPresent
+void display_present();
 
 #endif

@@ -60,25 +60,20 @@ void gui_handle_event(SDL_Event *event)
    nk_sdl_handle_event(event);
 }
 
-void gui_create_and_update()
+void gui_create_widgets()
 {
    chip8_gui_stack(ctx);
+}
 
-   SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-   SDL_RenderClear(renderer);
-
-   display_update();
-   
+void gui_draw()
+{
    nk_sdl_render(NK_ANTI_ALIASING_ON);
-   
-   SDL_RenderPresent(renderer);
 }
 
 // create gui window to display chip8 stack
 static void chip8_gui_stack(struct nk_context *ctx)
 {
-   
-   if ( nk_begin(ctx, "Demo", nk_rect(50, 50, 230, 250), NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
+   if ( nk_begin(ctx, "Stack", nk_rect(0, 0, 250, 250), NK_WINDOW_BORDER|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE))
    {
       nk_layout_row_static(ctx, 30, 80, 1);
       if (nk_button_label(ctx, "press me"))

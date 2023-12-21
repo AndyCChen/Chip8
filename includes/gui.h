@@ -15,8 +15,10 @@ void gui_input_end();
 
 void gui_handle_event(SDL_Event *event);
 
-// create gui and draw to display
-// this function calls display_update to draw to the screen
-void gui_create_and_update();
+// declare and initialize all gui window and widgets
+void gui_create_widgets();
+
+// draw gui by calling nk_sdl_render
+void gui_draw();
 
 #endif

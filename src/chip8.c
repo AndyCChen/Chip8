@@ -121,7 +121,7 @@ void chip8_run_cycle(bool log_flag)
       {
          if (opcode == 0x00E0)
          {
-            display_clear();
+            display_clear_buffer();
             snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "00E0 CLEAR SCREEN\n");
          }
          else if (opcode == 0x00EE)
