@@ -4,6 +4,7 @@
 
 #include "../includes/display.h"
 #include "../includes/chip8.h"
+#include "../includes/gui.h"
 
 static SDL_Window *gWindow = NULL;
 static SDL_Renderer *gRenderer = NULL;
@@ -18,9 +19,6 @@ static SDL_Rect Display [PIXELS_W * PIXELS_H];
 // 0: off, pixel is black
 // 1: on, pixel is white
 static uint8_t Display_buffer [PIXELS_W * PIXELS_H];
-
-// flag that is used by draw and clear instructions to signal when the display needs to be updated
-static bool update_flag = false;
 
 // callback for sdl to use for generating sound
 static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
@@ -133,9 +131,6 @@ void display_close()
 
 void display_update()
 {
-   SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-   SDL_RenderClear(gRenderer);
-
    for (int pixel_row = 0; pixel_row < PIXELS_H; ++pixel_row)
    {
       for (int pixel_col = 0; pixel_col < PIXELS_W; ++pixel_col)
@@ -154,11 +149,6 @@ void display_update()
          }
       }
    }
-
-   SDL_RenderPresent(gRenderer);
-
-   // reset update flag back to false when render updates are done
-   update_flag = false;
 }
 
 void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
@@ -207,26 +197,25 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height)
          Display_buffer[display_sprite_origin + (sprite_byte * PIXELS_W) + sprite_bit] = display_pixel_state ^ sprite_pixel_state;
       }
    }
-
-   // signal that we want to update the display
-   update_flag = true;
 }
 
 void display_clear()
 {
    // set all display pixels to off state
    memset(Display_buffer, 0, PIXELS_H * PIXELS_W);
-
-   // signal that we want to update display
-   update_flag = true;
-}
-
-bool display_get_update_flag()
-{
-   return update_flag;
 }
 
 void display_pause_audio_device(int pause_on)
 {
    SDL_PauseAudioDevice(device_id, pause_on);
+}
+
+SDL_Window *display_get_window()
+{
+   return gWindow;
+}
+
+SDL_Renderer *display_get_renderer()
+{
+   return gRenderer;
 }

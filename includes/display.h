@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "SDL.h"
+
 // contains all utilities for I/O of display for chip8
 
 // chip8 display resolution is 64 by 32 pixels
@@ -37,11 +39,11 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height);
 // set all display pixels to off
 void display_clear();
 
-// returns the update flag
-// true if the display needs to be updated, else is false
-bool display_get_update_flag();
-
 // pause_on: non-zero to pause audio, 0 to unpause
 void display_pause_audio_device(int pause_on);
+
+SDL_Window *display_get_window();
+
+SDL_Renderer *display_get_renderer();
 
 #endif

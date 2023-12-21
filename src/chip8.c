@@ -501,8 +501,6 @@ void chip8_run_cycle(bool log_flag)
    // decrement timers every cycle
    chip8_update_timers();
 
-   if ( display_get_update_flag() ) display_update();
-
    if (log_flag) printf("%s", disasembler_log);
 }
 
