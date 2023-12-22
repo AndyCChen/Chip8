@@ -41,7 +41,7 @@ void display_draw(uint8_t x_pos, uint8_t y_pos, uint8_t sprite_height);
 void display_clear();
 
 // clear display buffer so that a subsequent call to display update will clear the screen
-// call display_clear to clear the screen
+// call display_clear instead to clear the screen directly
 void display_clear_buffer();
 
 // pause_on: non-zero to pause audio, 0 to unpause
