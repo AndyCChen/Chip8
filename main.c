@@ -14,7 +14,7 @@ void process_key_input_down(SDL_Event *e);
 void process_key_input_up(SDL_Event *e); 
 bool process_command_line_args(int argc, char *argv[]);
 
-static bool pause_flag = false, cycle_step_flag = false, log_flag = false;
+static bool chip8_pause_flag = false, cycle_step_flag = false, log_flag = false;
 
 static const char *rom_path_arg = NULL;
 
@@ -50,14 +50,13 @@ int main( int argc, char *argv[])
 	// timers to lock chip8 speed into a specified clock speed
 
 	float delta_time = 0; // seconds passed in beween loop iterations
+	float delta_time_limit = (float) 1 / chip8_clock_rate;
 	clock_t current_time; 
 	clock_t previous_time = clock();
 
 	// main loop
    while(!quit_flag)
    { 
-		restart:
-		
 		// process sdl events in the window
 		gui_input_begin();
 		while(SDL_PollEvent( &event ))
@@ -83,43 +82,35 @@ int main( int argc, char *argv[])
 		// exit if close window is pressed
 		if (quit_flag) break;
 
-		// this block only runs if chip8 is paused by pressing f5
-		if (pause_flag)
+		if (!chip8_pause_flag)
 		{
-			// step through a single cycle when space is pressed
-			if (cycle_step_flag)
+			// main chip8 loop process
+			current_time = clock();
+
+			delta_time +=  (float) ( current_time - previous_time ) / CLOCKS_PER_SEC;
+			if ( delta_time >= delta_time_limit ) delta_time = delta_time_limit; // limit delta time
+
+			previous_time = current_time;
+
+			// lock chip8 to run at specified clockrate
+			if ( delta_time == delta_time_limit )
 			{
 				chip8_run_cycle(log_flag);
-				cycle_step_flag = false;
+
+				delta_time = 0;
 			}
-
-			gui_create_widgets(); // declare and initialize gui elements
-			display_clear();      // clear the display before draw
-			display_update();     // set render rectangles (pixels) with display buffer 
-			gui_draw();           // draw the gui elements
-			display_present();    // finally present the render to display
-			goto restart;         // jump back up to restart so we can continually poll events while paused
 		}
-
-		// main chip8 loop process
-		current_time = clock();
-		delta_time +=  (float) ( current_time - previous_time ) / CLOCKS_PER_SEC;
-		if ( delta_time >= 0.1 ) delta_time = 0.1; // limit delta time to 100ms
-		previous_time = current_time;
-
-		// this loop runs at specified hertz rate
-		while ( delta_time >= (float) 1 / chip8_clock_rate )
+		else if (cycle_step_flag) // when chip8 is paused, allow stepping through a single cycle 
 		{
 			chip8_run_cycle(log_flag);
-				
-			delta_time -= (float) 1 / chip8_clock_rate;
+			cycle_step_flag = false;
 		}
 
-		gui_create_widgets(); // declare and initialize gui elements
+		gui_create_widgets(); // declare and initialize gui widgets
 		display_clear();      // clear the display before draw
-		display_update();     // set render rectangles (pixels) to correct the color with display buffer 
-		gui_draw();           // draw the gui elements
-		display_present();    // finally present the render to display
+		display_update();     // set display rectangles (pixels) to correct the color with display buffer 
+		gui_draw();           // draw the gui widgets
+		display_present();    // render changes to display
    }
 
 	gui_close();
@@ -174,9 +165,12 @@ void process_key_input_up(SDL_Event *e)
 		case SDL_SCANCODE_V: chip8_set_key_up(0xF); break;
 		case SDL_SCANCODE_F5: 
 		{
-			pause_flag = !pause_flag;
-			if (pause_flag) printf("Paused, press space to step through a single instruction or press f5 again to resume.\n");
-			else printf("Resuming chip8\n"); 
+			chip8_pause_flag = !chip8_pause_flag;
+			if (chip8_pause_flag)
+			{
+				printf("Paused, press space to step through a single instruction or press f5 again to resume.\n"); 
+				display_pause_audio_device(1); // silence audio when chip8 is paused
+			}
 			break;
 		}
 		case SDL_SCANCODE_SPACE: cycle_step_flag = true; break;
