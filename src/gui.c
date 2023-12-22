@@ -14,11 +14,18 @@
 
 #include "../includes/gui.h"
 #include "../includes/display.h"
+#include "../includes/chip8.h"
 
 static struct nk_context *ctx = NULL;
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 
+static struct nk_color RED;
+static struct nk_color CYAN;
+
+// gui widgets
+
+// create gui window to display chip8 stack
 static void chip8_gui_stack(struct nk_context *ctx);
 
 void gui_close()
@@ -43,6 +50,10 @@ void gui_init()
    nk_sdl_font_stash_end();
 
    nk_style_set_font(ctx, &font->handle);
+
+   // create nk colors
+   RED = nk_rgb(255, 0, 0);
+   CYAN = nk_rgb(44, 191, 191);
 }
 
 void gui_input_begin()
@@ -70,14 +81,33 @@ void gui_draw()
    nk_sdl_render(NK_ANTI_ALIASING_ON);
 }
 
-// create gui window to display chip8 stack
 static void chip8_gui_stack(struct nk_context *ctx)
 {
-   if ( nk_begin(ctx, "Stack", nk_rect(0, 0, 250, 250), NK_WINDOW_BORDER|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE))
+   int window_height = 0;
+   SDL_GetWindowSize(window, NULL, &window_height);
+
+   #define STACK_VALUE_BUFFER_SIZE 5
+   #define STACK_COUNT_BUFFER_SIZE 3
+   char stack_value_buffer[STACK_VALUE_BUFFER_SIZE];
+   char stack_level_buffer[STACK_COUNT_BUFFER_SIZE];
+
+   if ( nk_begin(ctx, "Stack", nk_rect(0, 0, 110, (float) window_height), NK_WINDOW_BORDER|NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE))
    {
-      nk_layout_row_static(ctx, 30, 80, 1);
-      if (nk_button_label(ctx, "press me"))
-         printf("button pressed\n");
+      for (int row = 0; row < MAX_STACK_LEVEL; ++row)
+      {
+         snprintf(stack_value_buffer, STACK_VALUE_BUFFER_SIZE, "%04x", myChip8.stack[row]);
+         snprintf(stack_level_buffer, STACK_COUNT_BUFFER_SIZE, "%d", row);
+
+         nk_layout_row_begin(ctx, NK_STATIC, 15, 2);
+
+         nk_layout_row_push(ctx, 20);
+         nk_label_colored(ctx, stack_level_buffer, NK_TEXT_CENTERED, myChip8.sp == row ? CYAN : RED );
+
+         nk_layout_row_push(ctx, 40);
+         nk_label(ctx, stack_value_buffer, NK_TEXT_CENTERED);
+
+         nk_layout_row_end(ctx);
+      }
    }
 
    nk_end(ctx);
