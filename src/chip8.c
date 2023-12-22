@@ -111,6 +111,7 @@ void chip8_run_cycle(bool log_flag)
    // first 4 bits (nibble) of a opcode
    uint8_t first_nibble = (opcode & 0xF000) >> 12;
    int dsam_log_offset = snprintf(disasembler_log, DSAM_LOG_SIZE, "%04x %04x ", myChip8.PC, opcode);
+   int bytes_to_write = DSAM_LOG_SIZE - dsam_log_offset;
 
    // increment program counter to point to next intruction (next 2 bytes)
    myChip8.PC += 2;
@@ -122,7 +123,7 @@ void chip8_run_cycle(bool log_flag)
          if (opcode == 0x00E0)
          {
             display_clear_buffer();
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "00E0 CLEAR SCREEN\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "00E0 CLEAR SCREEN\n");
          }
          else if (opcode == 0x00EE)
          {
@@ -130,11 +131,11 @@ void chip8_run_cycle(bool log_flag)
             {
                myChip8.sp -= 1;
                myChip8.PC = myChip8.stack[myChip8.sp]; // return from subroutine, jump to return address
-               snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "00EE RETURN: %04x from subroutine\n", myChip8.PC);
+               snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "00EE RETURN: %04x from subroutine\n", myChip8.PC);
             }
             else
             {
-               snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "Empty stack, cannont return!\n");
+               snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "Empty stack, cannont return!\n");
             }
          }
          break;
@@ -144,7 +145,7 @@ void chip8_run_cycle(bool log_flag)
          uint16_t NNN = opcode & 0x0FFF;
          myChip8.PC = NNN; // jump to address NNN
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "1NNN JUMP to NNN: %03x\n", NNN); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "1NNN JUMP to NNN: %03x\n", NNN); 
          break;
       }
       case 0x2: 
@@ -160,10 +161,10 @@ void chip8_run_cycle(bool log_flag)
          }
          else 
          {
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "Stack overflow occured!\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "Stack overflow occured!\n");
          }
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "2NNN Call Subroutine at NNN: %03x\n", NNN); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "2NNN Call Subroutine at NNN: %03x\n", NNN); 
          break;
       }
       case 0x3: 
@@ -176,7 +177,7 @@ void chip8_run_cycle(bool log_flag)
             myChip8.PC += 2; // skip next intruction if V[X] equals NN
          }
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "3XNN SKIP if VX: %d == NN %d\n", myChip8.V[X], NN); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "3XNN SKIP if VX: %d == NN %d\n", myChip8.V[X], NN); 
          break;
       }
       case 0x4: 
@@ -189,7 +190,7 @@ void chip8_run_cycle(bool log_flag)
             myChip8.PC += 2; // skip next instruction if V[X] not equals NN
          }
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "4XNN SKIP if VX: %d != NN: %d\n", myChip8.V[X], NN); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "4XNN SKIP if VX: %d != NN: %d\n", myChip8.V[X], NN); 
          break;
       }
       case 0x5: 
@@ -202,7 +203,7 @@ void chip8_run_cycle(bool log_flag)
             myChip8.PC += 2; // skip next instruction if V[X] equals V[Y]
          }
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "5XY0 SKIP if VX: %d == VY: %d\n", myChip8.V[X], myChip8.V[Y]);
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "5XY0 SKIP if VX: %d == VY: %d\n", myChip8.V[X], myChip8.V[Y]);
          break;
       }
       case 0x6: 
@@ -210,7 +211,7 @@ void chip8_run_cycle(bool log_flag)
          uint8_t X = (opcode & 0x0F00) >> 8;
          uint8_t NN = opcode & 0x00FF;
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "6XNN LOAD VX: %d with NN: %d\n", myChip8.V[X], NN); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "6XNN LOAD VX: %d with NN: %d\n", myChip8.V[X], NN); 
          myChip8.V[X] = NN; // load register V[X] with 8 bit immediate NN
 
          break;
@@ -220,7 +221,7 @@ void chip8_run_cycle(bool log_flag)
          uint8_t X = (opcode & 0x0F00) >> 8;
          uint16_t NN = opcode & 0x00FF;
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "7XNN ADD NN: %d into VX: %d\n", NN, myChip8.V[X]); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "7XNN ADD NN: %d into VX: %d\n", NN, myChip8.V[X]); 
          myChip8.V[X] += NN; // add 8 bit immediate to register V[X]
  
          break;
@@ -234,17 +235,17 @@ void chip8_run_cycle(bool log_flag)
          if (last_nibble == 0x0)
          {
             myChip8.V[X] = myChip8.V[Y]; // store V[Y] into V[X]
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY0 MOV VY: %d into VX\n", myChip8.V[Y]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY0 MOV VY: %d into VX\n", myChip8.V[Y]);
          }
          else if (last_nibble == 0x1)
          {
             myChip8.V[X] = myChip8.V[X] | myChip8.V[Y]; // set V[X] to biwize or of V[X] and V[Y]
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY1 OR VX VY\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY1 OR VX VY\n");
          }
          else if (last_nibble == 0x2)
          {
             myChip8.V[X] = myChip8.V[X] & myChip8.V[Y]; // set V[X] to biwize and of V[X] and V[Y]
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY2 AND VX VY\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY2 AND VX VY\n");
          }
          else if (last_nibble == 0x3)
          {
@@ -258,11 +259,11 @@ void chip8_run_cycle(bool log_flag)
             uint8_t XOR_output = ~ ( AND | NOR );
 
             myChip8.V[X] = XOR_output; // store VX XOR VY into VX
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY3 XOR VX VY\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY3 XOR VX VY\n");
          }
          else if (last_nibble == 0x4)
          {
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY4 ADD VX: %d VY: %d\n", myChip8.V[X],  myChip8.V[Y]); 
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY4 ADD VX: %d VY: %d\n", myChip8.V[X],  myChip8.V[Y]); 
 
             uint8_t  first_operand = myChip8.V[X]; // save value of VX for overflow check later
 
@@ -274,7 +275,7 @@ void chip8_run_cycle(bool log_flag)
          }
          else if (last_nibble == 0x5)
          {
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY5 SUB VX: %d VY: %d\n", myChip8.V[X], myChip8.V[Y]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY5 SUB VX: %d VY: %d\n", myChip8.V[X], myChip8.V[Y]);
 
             uint8_t minuend = myChip8.V[X];
             uint8_t subtrahend = myChip8.V[Y];
@@ -286,7 +287,7 @@ void chip8_run_cycle(bool log_flag)
          }
          else if (last_nibble == 0x6)
          {
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY6 RIGHT SHIFT 1 bit VY INTO VX\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY6 RIGHT SHIFT 1 bit VY INTO VX\n");
 
             uint8_t VY_temp = myChip8.V[Y];
 
@@ -298,7 +299,7 @@ void chip8_run_cycle(bool log_flag)
          }
          else if (last_nibble == 0x7)
          { 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XY7 SUB VY: %d VX: %d\n", myChip8.V[Y], myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XY7 SUB VY: %d VX: %d\n", myChip8.V[Y], myChip8.V[X]);
 
             uint8_t minuend = myChip8.V[Y];
             uint8_t subtrahend = myChip8.V[X];
@@ -311,7 +312,7 @@ void chip8_run_cycle(bool log_flag)
          }
          else if (last_nibble == 0xE)
          {
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "8XYE RIGHT SHIFT 1 bit VY INTO VX\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "8XYE RIGHT SHIFT 1 bit VY INTO VX\n");
 
             uint8_t VY_temp = myChip8.V[Y];
 
@@ -334,7 +335,7 @@ void chip8_run_cycle(bool log_flag)
             myChip8.PC += 2; // skip next instruction if V[X] not equals V[Y]
          }
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "9XY0 SKIP IF VX: %d != VY: %d\n", myChip8.V[X], myChip8.V[Y]); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "9XY0 SKIP IF VX: %d != VY: %d\n", myChip8.V[X], myChip8.V[Y]); 
          break;
       }
       case 0xA: 
@@ -343,7 +344,7 @@ void chip8_run_cycle(bool log_flag)
 
          myChip8.I = NNN; // load address register with address NNN
          
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "ANNN LOAD I REG with NNN: %03x\n", NNN);
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "ANNN LOAD I REG with NNN: %03x\n", NNN);
          break;
       }
       case 0xB: 
@@ -352,7 +353,7 @@ void chip8_run_cycle(bool log_flag)
 
          myChip8.PC = NNN + myChip8.V[0];
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "BNNN JUMP TO NNN: %03x + V0: %d\n", NNN, myChip8.V[0]); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "BNNN JUMP TO NNN: %03x + V0: %d\n", NNN, myChip8.V[0]); 
          break;
       }
       case 0xC: 
@@ -363,7 +364,7 @@ void chip8_run_cycle(bool log_flag)
          int random_number = rand();
          myChip8.V[X] = random_number & NN;        
 
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "CXNN RAND NUM: %d\n", myChip8.V[X]); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "CXNN RAND NUM: %d\n", myChip8.V[X]); 
          break;
       }
       case 0xD: 
@@ -373,7 +374,7 @@ void chip8_run_cycle(bool log_flag)
          uint8_t N = (opcode & 0x000F);
 
          display_draw(myChip8.V[X] % PIXELS_W, myChip8.V[Y] % PIXELS_H, N);
-         snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "DXYN DRAW SPRITE AT VX: %d, VY: %d, N: %d pixels high\n", myChip8.V[X] % PIXELS_W, myChip8.V[Y] % PIXELS_H, N); 
+         snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "DXYN DRAW SPRITE AT VX: %d, VY: %d, N: %d pixels high\n", myChip8.V[X] % PIXELS_W, myChip8.V[Y] % PIXELS_H, N); 
 
          break;
       }
@@ -391,7 +392,7 @@ void chip8_run_cycle(bool log_flag)
             if (key == 1) myChip8.PC += 2;
             is_key_released = false;
             
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "EX9E SKIP IF key %1x is pressed\n", myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "EX9E SKIP IF key %1x is pressed\n", myChip8.V[X]);
          }
          else if (last_two_nibble == 0xA1)
          {
@@ -399,7 +400,7 @@ void chip8_run_cycle(bool log_flag)
             if (key == 0) myChip8.PC += 2;
             is_key_released = false;
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "EXA1 SKIP IF key %1x not pressed\n", myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "EXA1 SKIP IF key %1x not pressed\n", myChip8.V[X]);
          }
 
          break;
@@ -412,7 +413,7 @@ void chip8_run_cycle(bool log_flag)
          if (last_two_nibble == 0x07)
          {
             myChip8.V[X] = myChip8.delay_timer;
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX07 LOAD delay_timer: %d into VX\n", myChip8.delay_timer);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX07 LOAD delay_timer: %d into VX\n", myChip8.delay_timer);
          }
          else if (last_two_nibble == 0x0A)
          {
@@ -426,28 +427,28 @@ void chip8_run_cycle(bool log_flag)
                is_key_released = false;    // reset flag back to false
             }
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX0A WAIT for keypress and store in VX\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX0A WAIT for keypress and store in VX\n");
          }
          else if (last_two_nibble == 0x15)
          {
             // set delay timer to value of register V[X]
             myChip8.delay_timer = myChip8.V[X];
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX15 SET delay timer to value in VX: %d\n", myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX15 SET delay timer to value in VX: %d\n", myChip8.V[X]);
          }
          else if (last_two_nibble == 0x18)
          {
             // set sound timer to value of register V[X]
             myChip8.sound_timer = myChip8.V[X];
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX18 SET sound timer to value in VX: %d\n", myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX18 SET sound timer to value in VX: %d\n", myChip8.V[X]);
          }
          else if (last_two_nibble == 0x1E)
          {
             // add value in register V[X] to register I
             myChip8.I += myChip8.V[X];
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX1E ADD VX: %d to register I\n", myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX1E ADD VX: %d to register I\n", myChip8.V[X]);
          }
          else if (last_two_nibble == 0x29)
          {
@@ -455,7 +456,7 @@ void chip8_run_cycle(bool log_flag)
             // multiply by 5 because fonts are 5 pixels high
             myChip8.I = FONT_START + ( 5 * myChip8.V[X] );
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX29 SET register I to point to font with hex value in VX: %d\n", myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX29 SET register I to point to font with hex value in VX: %d\n", myChip8.V[X]);
          }
          else if (last_two_nibble == 0x33)
          {
@@ -470,7 +471,7 @@ void chip8_run_cycle(bool log_flag)
             myChip8.ram[myChip8.I + 1] = tens;
             myChip8.ram[myChip8.I + 2] = ones;
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX33 STORE BCD %d %d %d of VX: %d into address starting add reg I\n", hundreds, tens, hundreds, myChip8.V[X]);
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX33 STORE BCD %d %d %d of VX: %d into address starting add reg I\n", hundreds, tens, hundreds, myChip8.V[X]);
          }
          else if (last_two_nibble == 0x55)
          {
@@ -480,7 +481,7 @@ void chip8_run_cycle(bool log_flag)
                myChip8.ram[myChip8.I + index] = myChip8.V[index];
             }
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX55 LOAD V0 to VX into memory starting at address I\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX55 LOAD V0 to VX into memory starting at address I\n");
          }
          else if (last_two_nibble == 0x65)
          {
@@ -490,12 +491,12 @@ void chip8_run_cycle(bool log_flag)
                myChip8.V[index] = myChip8.ram[myChip8.I + index];
             }
 
-            snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "FX65 LOAD values starting from address I into registers V0 to VX\n");
+            snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "FX65 LOAD values starting from address I into registers V0 to VX\n");
          }
    
          break;
       };
-      default: snprintf(disasembler_log + dsam_log_offset, DSAM_LOG_SIZE, "Invalid opcode encountered!\n");
+      default: snprintf(disasembler_log + dsam_log_offset, bytes_to_write, "Invalid opcode encountered!\n");
    }
 
    // decrement timers every cycle
