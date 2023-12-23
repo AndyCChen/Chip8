@@ -35,12 +35,12 @@ int main( int argc, char *argv[])
 	chip8_reset();
 
 	// attempt to load rom file into chip8 ram
-	if (!chip8_load_rom(rom_path_arg)) return EXIT_FAILURE;
+	if ( !chip8_load_rom(rom_path_arg) ) return EXIT_FAILURE;
 
 	printf("program loaded!\n");
 
 	// initialize display scaled to the display scale factor,default value of 15
-	if (display_init(display_scale) < 0) return EXIT_FAILURE;
+	if ( !display_init(display_scale) ) return EXIT_FAILURE;
 
 	gui_init();
 
@@ -53,7 +53,6 @@ int main( int argc, char *argv[])
 	float delta_time_limit = (float) 1 / chip8_clock_rate;
 	clock_t current_time; 
 	clock_t previous_time = clock();
-
 	// main loop
    while(!quit_flag)
    { 

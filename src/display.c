@@ -36,44 +36,47 @@ static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
    }
 }
 
-int display_init(int display_scale_factor)
+bool display_init(int display_scale_factor)
 {
    // scale up resolution based on scale factor
-   const int SCREEN_WIDTH = PIXELS_W * display_scale_factor;
-   const int SCREEN_HEIGHT = PIXELS_H * display_scale_factor;
+
+   const int VIEWPORT_W = PIXELS_W * display_scale_factor;
+   const int VIEWPORT_H = PIXELS_H * display_scale_factor;
 
    // initialize SDL
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
    {
       printf("SDL could not initialize! SDL Error %s\n", SDL_GetError());
-      return -1;
+      return false;
    }
    
-   gWindow = SDL_CreateWindow("Chip 8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,  SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+   const int LEFT_OFFSET = GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W + GUI_CPU_STATE_WIDGET_W + 1; // width ocupied by gui located left of the chip8 viewport
+
+   gWindow = SDL_CreateWindow("Chip 8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, LEFT_OFFSET + VIEWPORT_W,  VIEWPORT_H, SDL_WINDOW_SHOWN);
    if (gWindow == NULL)
    {
       printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
-      return -1;
+      return false;
    }
 
    gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
    if (gRenderer == NULL)
    {
       printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
-      return -1;
+      return false;
    }
 
    // initialze display with 64 * 32 rectangles (pixels)
    // rectangles here represent a single pixel
-   int number_of_rects = PIXELS_W * PIXELS_H; // number of rectangles to render
-   int rect_w = SCREEN_WIDTH / PIXELS_W;      // width of a rect
-   int rect_h = SCREEN_HEIGHT / PIXELS_H;     // height of a rect
-   int rect_pos_x = 0;                        // x position of a rect
-   int rect_pos_y = 0;                        // y position of a rect 
-   int row_count = 0;                         // row position of a rect
+   int number_of_rects = PIXELS_W * PIXELS_H;
+   int rect_w = VIEWPORT_W / PIXELS_W;
+   int rect_h = VIEWPORT_H / PIXELS_H;
+   int rect_pos_x = 0;
+   int rect_pos_y = 0;
+   int row_count = 0; // row position of a rect
    for (int rect_number = 0; rect_number < number_of_rects; ++rect_number)
    {
-      rect_pos_x = ( rect_w * (rect_number % PIXELS_W) ); 
+      rect_pos_x = ( rect_w * (rect_number % PIXELS_W) ) + LEFT_OFFSET; 
       if (rect_number % PIXELS_W == 0)
       {
          rect_pos_y = ( rect_h * (row_count++) ); // post decrement make sure to use initial row_count value of 0 on first pass
@@ -104,16 +107,16 @@ int display_init(int display_scale_factor)
    if ( ( device_id = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0) ) == 0 )
    {
       printf("SDL could not get an audio device! SDL Error: %s\n", SDL_GetError());
-      return -1;
+      return false;
    }
    
    if (have.format != AUDIO_S16SYS)
    {
       printf("SDL could not get desired audio format! SDL Error: %s\n", SDL_GetError());
-      return -1;
+      return false;
    }
 
-   return 0;
+   return true;
 }
 
 void display_close()
@@ -131,22 +134,19 @@ void display_close()
 
 void display_update()
 {
-   for (int pixel_row = 0; pixel_row < PIXELS_H; ++pixel_row)
+   for (int pixel = 0; pixel < PIXELS_H * PIXELS_W; ++pixel)
    {
-      for (int pixel_col = 0; pixel_col < PIXELS_W; ++pixel_col)
+      // if pixel on set color to white
+      if (Display_buffer[pixel])
       {
-         // if pixel on set color to white
-         if (Display_buffer[( pixel_row * PIXELS_W) + pixel_col])
-         {
-            SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-            SDL_RenderFillRect(gRenderer, &Display[( pixel_row * PIXELS_W ) + pixel_col]);
-         }
-         // else pixel is off so we set color to black
-         else
-         {
-            SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-            SDL_RenderFillRect(gRenderer, &Display[( pixel_row * PIXELS_W ) + pixel_col]);
-         }
+         SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+         SDL_RenderFillRect(gRenderer, &Display[pixel]);
+      }
+      // else pixel is off so we set color to black
+      else
+      {
+         SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+         SDL_RenderFillRect(gRenderer, &Display[pixel]);
       }
    }
 }

@@ -3,6 +3,10 @@
 
 #include "SDL.h"
 
+#define GUI_STACK_WIDGET_W 110
+#define GUI_MEMORY_WIDGET_W 225
+#define GUI_CPU_STATE_WIDGET_W 150
+
 // initialize gui context for nuklear 
 void gui_init();
 
