@@ -17,7 +17,7 @@ static char disasembler_log[DSAM_LOG_SIZE];
 // global chip 8 instance
 Chip8 myChip8;
 
-/* holds the states of the 15 key on the keypad
+/* holds the states of the 16 keys of the keypad
    each bit coresponds to a key that is in the pressed or released state
    0: released
    1: pressed
@@ -539,4 +539,9 @@ void chip8_update_timers()
 
       dt -= (float) 1 / 60;
    }
+}
+
+uint16_t chip8_get_keypad()
+{
+   return keypad;
 }

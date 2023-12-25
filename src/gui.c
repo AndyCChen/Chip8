@@ -1,6 +1,5 @@
 #include "stdio.h"
 
-#define NK_SDL_CLAMP_CLIP_RECT
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
@@ -28,11 +27,16 @@ static int window_width = 0;
 static struct nk_color RED;
 static struct nk_color CYAN;
 
+static int viewport_width;
+
 // gui widgets
 
 static void widget_stack(float x_pos, float y_pos, float width, float height);
 static void widget_memory(float x_pos, float y_pos, float width, float height);
 static void widget_cpu_state(float x_pos, float y_pos, float width, float height);
+static void widget_keypad(float x_pos, float y_pos, float width, float height);
+static void widget_debug(float x_pos, float y_pos, float width, float height);
+static void widget_general(float x_pos, float y_pos, float width, float height);
 
 void gui_close()
 {
@@ -45,6 +49,8 @@ void gui_init()
    renderer = display_get_renderer();
 
    SDL_GetWindowSize(window, &window_width, &window_height);
+
+   display_get_viewport_size( &viewport_width, NULL );
 
    ctx = nk_sdl_init( window, renderer );
 
@@ -81,9 +87,20 @@ void gui_handle_event(SDL_Event *event)
 
 void gui_create_widgets()
 {
-   widget_stack(0, 0, GUI_STACK_WIDGET_W, (float) window_height);
-   widget_memory(GUI_STACK_WIDGET_W, 0, GUI_MEMORY_WIDGET_W, (float) window_height);
-   widget_cpu_state(GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W , 0, GUI_CPU_STATE_WIDGET_W, (float) window_height);
+   widget_stack( 0, 0, GUI_STACK_WIDGET_W, (float) window_height );
+   widget_memory( GUI_STACK_WIDGET_W, 0, GUI_MEMORY_WIDGET_W, (float) window_height );
+
+   const float WIDGET_CPU_STATE_HEIGHT = (float) window_height * 0.6;
+   const float WIDGET_KEYPAD_HEIGHT = (float) window_height * 0.4;
+
+   widget_cpu_state( GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W, 0, GUI_CPU_STATE_WIDGET_W, WIDGET_CPU_STATE_HEIGHT );
+   widget_keypad( GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W, WIDGET_CPU_STATE_HEIGHT, GUI_KEYPAD_W, WIDGET_KEYPAD_HEIGHT );
+
+   const float WIDGET_DEBUG_WIDTH = viewport_width * 0.3;
+   const float WIDGET_GENERAL_WIDTH = viewport_width * 0.7;
+
+   widget_debug( GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W + GUI_CPU_STATE_WIDGET_W, 0, WIDGET_DEBUG_WIDTH, GUI_DEBUG_H );
+   widget_general( GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W + GUI_CPU_STATE_WIDGET_W + WIDGET_DEBUG_WIDTH, 0, WIDGET_GENERAL_WIDTH, GUI_GENERAL_H );
 }
 
 void gui_draw()
@@ -96,8 +113,8 @@ static void widget_stack(float x_pos, float y_pos, float width, float height)
    #define STACK_COUNT_LABEL_SIZE 3
    #define STACK_VALUE_LABEL_SIZE 5
    
-   char stack_value_buffer[STACK_VALUE_LABEL_SIZE];
-   char stack_level_buffer[STACK_COUNT_LABEL_SIZE];
+   static char stack_value_buffer[STACK_VALUE_LABEL_SIZE];
+   static char stack_level_buffer[STACK_COUNT_LABEL_SIZE];
 
    if ( nk_begin( ctx, "Stack", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
@@ -130,10 +147,10 @@ static void widget_memory(float x_pos, float y_pos, float width, float height)
    #define MEMORY_VALUE_LABEL_SIZE 3
    #define NUM_OF_COLS 9
    
-   char memory_address_buffer[MEMORY_ADDRESS_LABEL_SIZE];
-   char memory_value_buffer[MEMORY_VALUE_LABEL_SIZE];
+   static char memory_address_buffer[MEMORY_ADDRESS_LABEL_SIZE];
+   static char memory_value_buffer[MEMORY_VALUE_LABEL_SIZE];
 
-   float widths[NUM_OF_COLS] = {40, 15, 15, 15, 15, 15, 15, 15, 15}; // widths for each of the 9 columns in a row
+   static float widths[NUM_OF_COLS] = { 45, 15, 15, 15, 15, 15, 15, 15, 15 }; // widths for each of the 9 columns in a row
 
    if ( nk_begin( ctx, "Memory", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
@@ -165,10 +182,10 @@ static void widget_cpu_state(float x_pos, float y_pos, float width, float height
    #define V_REGISTER_LABEL_BUFFER_SIZE 4
    #define REGISTER_VALUE_BUFFER_SIZE 5
 
-   char register_value_buffer[5];
+   static char register_value_buffer[5];
 
-   float widths[2] = {30, 35};
-   float v_register_widths[4] = {30, 25, 30, 25};
+   static float widths[2] = {30, 35};
+   static float v_register_widths[4] = {30, 25, 30, 25};
 
    if ( nk_begin( ctx, "CPU State", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
@@ -198,7 +215,7 @@ static void widget_cpu_state(float x_pos, float y_pos, float width, float height
       // v register row
       nk_layout_row(ctx, NK_STATIC, 15, 4, v_register_widths);
 
-      char v_register_label[V_REGISTER_LABEL_BUFFER_SIZE];
+      static char v_register_label[V_REGISTER_LABEL_BUFFER_SIZE];
 
       for (int i = 0; i < V_REGISTERS; ++i)
       {
@@ -227,4 +244,90 @@ static void widget_cpu_state(float x_pos, float y_pos, float width, float height
 
    #undef REGISTER_VALUE_BUFFER_SIZE
    #undef V_REGISTER_LABEL_BUFFER_SIZE
+}
+
+static void widget_keypad(float x_pos, float y_pos, float width, float height)
+{
+   if ( nk_begin( ctx, "Keypad", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   {
+      static char keypad[] = "123C456D789EA0BF"; // char text associated with each keypad button
+
+      // numerical value associated with each keypad button
+      static char keypad_values[] = { 
+         0x1, 0x2, 0x3, 0xC, 
+         0x4, 0x5, 0x6, 0xD, 
+         0x7, 0x8, 0x9, 0xE,
+         0xA, 0x0, 0xB, 0xF 
+      };
+
+      nk_button_set_behavior(ctx, NK_BUTTON_REPEATER);
+
+      struct nk_style_button button_style = ctx->style.button;
+      button_style.active.data.color = RED;
+      button_style.hover.data.color = RED;
+
+      // 16 bit int where each bit represents on or off state of a keypad button
+      uint16_t keypad_states = chip8_get_keypad();
+
+      // holds the state of the i-th keypad button state
+      // 0 released, 1 pressed
+      static uint8_t key_state = 0;
+
+      static uint16_t gui_button_states = 0;
+
+      // holds the state of the i-th gui button state
+      // 0 released, 1 pressed
+      static uint8_t button_state = 0;
+
+      nk_layout_row_static(ctx, 35, 25, 4);
+      for (int i = 1; i <= 16; ++i)
+      {
+         key_state = ( keypad_states & ( 1 << keypad_values[i - 1] ) ) >> keypad_values[i - 1];
+
+         if ( key_state ) 
+            button_style.normal.data.color = RED;
+         else 
+            button_style.normal.data.color = ctx->style.button.normal.data.color;
+
+         if ( nk_button_text_styled(ctx, &button_style, &keypad[i - 1], 1) )
+         {
+            gui_button_states = gui_button_states | ( 1 << i );
+            chip8_set_key_down(keypad_values[i - 1]);
+         }  
+         else
+         {
+            button_state = ( gui_button_states & ( 1 << i ) ) >> i;
+            
+            // only register a key up event if the button was previously in the on state
+            if (button_state == 1)
+            {
+               chip8_set_key_up(keypad_values[i - 1]);
+            }
+
+            gui_button_states = gui_button_states & ~( 1 << i );
+         }
+      }
+   }
+
+   nk_end(ctx);
+}
+
+static void widget_debug(float x_pos, float y_pos, float width, float height)
+{
+   if ( nk_begin( ctx, "Debug", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   {
+      // todo
+   }
+
+   nk_end(ctx);
+}
+
+static void widget_general(float x_pos, float y_pos, float width, float height)
+{
+   if ( nk_begin( ctx, "General", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   {
+      // todo
+   }
+
+   nk_end(ctx);
 }

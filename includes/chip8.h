@@ -59,5 +59,6 @@ void chip8_set_key_down(uint8_t key);
 // sets a key to be in the released state
 void chip8_set_key_up(uint8_t key);
 
+uint16_t chip8_get_keypad(void);
 
 #endif

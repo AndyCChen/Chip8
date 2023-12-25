@@ -21,9 +21,7 @@
 #define HALF_PERIOD  ( PERIOD / 2 ) // number of samples that a wave is held low or high
 
 // initialize application window
-bool display_init(int display_scale_factor);
-
-void display_set_chip8_viewport(int x_pos, int y_pos);
+bool display_init(int display_scale_factor, bool gui_flag);
 
 // free memory
 void display_close(void);
@@ -53,5 +51,7 @@ SDL_Renderer *display_get_renderer(void);
 
 // present renderer to the display by calling SDL_RenderPresent
 void display_present(void);
+
+void display_get_viewport_size(int *width, int *height);
 
 #endif

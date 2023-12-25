@@ -20,6 +20,8 @@ static SDL_Rect Display [PIXELS_W * PIXELS_H];
 // 1: on, pixel is white
 static uint8_t Display_buffer [PIXELS_W * PIXELS_H];
 
+static int VIEWPORT_W = 0, VIEWPORT_H = 0;
+
 // callback for sdl to use for generating sound
 static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
 {
@@ -36,12 +38,11 @@ static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
    }
 }
 
-bool display_init(int display_scale_factor)
+bool display_init(int display_scale_factor, bool gui_flag)
 {
    // scale up resolution based on scale factor
-
-   const int VIEWPORT_W = PIXELS_W * display_scale_factor;
-   const int VIEWPORT_H = PIXELS_H * display_scale_factor;
+   VIEWPORT_W = PIXELS_W * display_scale_factor;
+   VIEWPORT_H = PIXELS_H * display_scale_factor;
 
    // initialize SDL
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -50,9 +51,10 @@ bool display_init(int display_scale_factor)
       return false;
    }
    
-   const int LEFT_OFFSET = GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W + GUI_CPU_STATE_WIDGET_W + 1; // width ocupied by gui located left of the chip8 viewport
+   const int LEFT_OFFSET = gui_flag ? ( GUI_STACK_WIDGET_W + GUI_MEMORY_WIDGET_W + GUI_CPU_STATE_WIDGET_W + 1 ) : 0; // width ocupied by gui located left of the chip8 viewport
+   const int TOP_OFFSET = gui_flag ? ( GUI_DEBUG_H + 1 ) : 0;
 
-   gWindow = SDL_CreateWindow("Chip 8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, LEFT_OFFSET + VIEWPORT_W,  VIEWPORT_H, SDL_WINDOW_SHOWN);
+   gWindow = SDL_CreateWindow("Chip 8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, LEFT_OFFSET + VIEWPORT_W,  TOP_OFFSET + VIEWPORT_H, SDL_WINDOW_SHOWN);
    if (gWindow == NULL)
    {
       printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -79,7 +81,7 @@ bool display_init(int display_scale_factor)
       rect_pos_x = ( rect_w * (rect_number % PIXELS_W) ) + LEFT_OFFSET; 
       if (rect_number % PIXELS_W == 0)
       {
-         rect_pos_y = ( rect_h * (row_count++) ); // post decrement make sure to use initial row_count value of 0 on first pass
+         rect_pos_y = ( rect_h * (row_count++) ) + TOP_OFFSET; // post decrement make sure to use initial row_count value of 0 on first pass
       }
 
       Display[rect_number] = (SDL_Rect)
@@ -229,4 +231,13 @@ SDL_Window *display_get_window()
 SDL_Renderer *display_get_renderer()
 {
    return gRenderer;
+}
+
+void display_get_viewport_size(int *width, int *height)
+{
+   if (width == NULL) width = NULL;
+   else *width = VIEWPORT_W;
+
+   if (height == NULL) height = NULL;
+   else *height = VIEWPORT_H;
 }

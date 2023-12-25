@@ -14,7 +14,7 @@ void process_key_input_down(SDL_Event *e);
 void process_key_input_up(SDL_Event *e); 
 bool process_command_line_args(int argc, char *argv[]);
 
-static bool chip8_pause_flag = false, cycle_step_flag = false, log_flag = false;
+static bool chip8_pause_flag = false, cycle_step_flag = false, log_flag = false, gui_flag = true;
 
 static const char *rom_path_arg = NULL;
 
@@ -40,7 +40,7 @@ int main( int argc, char *argv[])
 	printf("program loaded!\n");
 
 	// initialize display scaled to the display scale factor,default value of 15
-	if ( !display_init(display_scale) ) return EXIT_FAILURE;
+	if ( !display_init(display_scale, gui_flag) ) return EXIT_FAILURE;
 
 	gui_init();
 
@@ -105,11 +105,11 @@ int main( int argc, char *argv[])
 			cycle_step_flag = false;
 		}
 
-		gui_create_widgets(); // declare and initialize gui widgets
-		display_clear();      // clear the display before draw
-		display_update();     // set display rectangles (pixels) to correct the color with display buffer 
-		gui_draw();           // draw the gui widgets
-		display_present();    // render changes to display
+		if (gui_flag) gui_create_widgets(); // declare and initialize gui widgets
+		display_clear();                    // clear the display before draw
+		display_update();                   // set display rectangles (pixels) to correct the color with display buffer 
+		if (gui_flag) gui_draw();           // draw the gui widgets
+		display_present();                  // render changes to display
    }
 
 	gui_close();
@@ -184,7 +184,7 @@ bool process_command_line_args(int argc, char *argv[])
 	int clock_rate_flag = 0, display_scale_flag = 0, rom_path_flag = 0;
 	const char *clock_rate_arg = NULL, *display_scale_arg = NULL;
 
-	while ( ( option = getopt(argc, argv, "c:d:p:l") ) != -1 )
+	while ( ( option = getopt(argc, argv, "c:d:p:lg") ) != -1 )
 	{
 		switch ( option )
 		{
@@ -206,6 +206,11 @@ bool process_command_line_args(int argc, char *argv[])
 				rom_path_arg = optarg;
 				break;
 			}
+			case 'g':
+			{
+				gui_flag = false;
+				break;
+			}
 			case 'l': log_flag = true; break;
 			default:
 			{
@@ -214,6 +219,7 @@ bool process_command_line_args(int argc, char *argv[])
 				printf("\t -c optional, set the clock rate, defaults to %d hz\n", chip8_clock_rate);
 				printf("\t -d optional, sets the display scale size, defaults to %d\n", display_scale);
 				printf("\t -l optional, enables the disassembler logs to the console\n");
+				printf("\t -g optional, toggles the gui off\n");
 				return false;
 			}
 		}
