@@ -250,10 +250,10 @@ static void widget_keypad(float x_pos, float y_pos, float width, float height)
 {
    if ( nk_begin( ctx, "Keypad", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
-      static char keypad[] = "123C456D789EA0BF"; // char text associated with each keypad button
+      static const char keypad_labels[] = "123C456D789EA0BF"; // char text associated with each keypad button
 
       // numerical value associated with each keypad button
-      static char keypad_values[] = { 
+      static const char keypad_values[] = { 
          0x1, 0x2, 0x3, 0xC, 
          0x4, 0x5, 0x6, 0xD, 
          0x7, 0x8, 0x9, 0xE,
@@ -266,45 +266,39 @@ static void widget_keypad(float x_pos, float y_pos, float width, float height)
       button_style.active.data.color = RED;
       button_style.hover.data.color = RED;
 
-      // 16 bit int where each bit represents on or off state of a keypad button
+      // 16 bit keypad state retrieved from cpu
       uint16_t keypad_states = chip8_get_keypad();
 
-      // holds the state of the i-th keypad button state
-      // 0 released, 1 pressed
-      static uint8_t key_state = 0;
-
+       // 16 bit int where each bit represents on or off state of the gui keypad button
       static uint16_t gui_button_states = 0;
 
-      // holds the state of the i-th gui button state
-      // 0 released, 1 pressed
-      static uint8_t button_state = 0;
-
       nk_layout_row_static(ctx, 35, 25, 4);
-      for (int i = 1; i <= 16; ++i)
+      for (int i = 0; i < 16; ++i)
       {
-         key_state = ( keypad_states & ( 1 << keypad_values[i - 1] ) ) >> keypad_values[i - 1];
+         // if key is in on state, toggle color to red
+         uint8_t key = ( keypad_states & ( 1 << keypad_values[i] ) ) >> keypad_values[i];
 
-         if ( key_state ) 
+         if ( key ) 
             button_style.normal.data.color = RED;
          else 
             button_style.normal.data.color = ctx->style.button.normal.data.color;
 
-         if ( nk_button_text_styled(ctx, &button_style, &keypad[i - 1], 1) )
+         if ( nk_button_text_styled(ctx, &button_style, &keypad_labels[i], 1) )
          {
-            gui_button_states = gui_button_states | ( 1 << i );
-            chip8_set_key_down(keypad_values[i - 1]);
+            gui_button_states = gui_button_states | ( 1 << keypad_values[i] );
+            chip8_set_key_down(keypad_values[i]);
          }  
          else
          {
-            button_state = ( gui_button_states & ( 1 << i ) ) >> i;
+            uint8_t button  = ( gui_button_states & ( 1 << keypad_values[i] ) ) >> keypad_values[i];
             
             // only register a key up event if the button was previously in the on state
-            if (button_state == 1)
+            if (button == 1)
             {
-               chip8_set_key_up(keypad_values[i - 1]);
+               chip8_set_key_up(keypad_values[i]);
             }
 
-            gui_button_states = gui_button_states & ~( 1 << i );
+            gui_button_states = gui_button_states & ~( 1 << keypad_values[i] );
          }
       }
    }
@@ -316,7 +310,38 @@ static void widget_debug(float x_pos, float y_pos, float width, float height)
 {
    if ( nk_begin( ctx, "Debug", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
-      // todo
+      nk_button_set_behavior(ctx, NK_BUTTON_DEFAULT);
+
+      struct nk_style_button button_style = ctx->style.button;
+      button_style.hover.data.color = RED;
+      button_style.active.data.color = RED;
+      button_style.normal.data.color = myChip8.pause_flag ? RED : ctx->style.button.normal.data.color;
+
+      nk_layout_row_static(ctx, 15, 50, 1);
+      nk_label_colored(ctx, "Status:", NK_TEXT_LEFT, RED);
+
+      //static bool paused = false;
+      
+      float ratio[] = { 50, 100 };
+
+      nk_layout_row(ctx, NK_STATIC, 20, 2, ratio);
+
+      nk_label_colored(ctx, "Paused", NK_TEXT_LEFT, myChip8.pause_flag ? CYAN : RED);
+      if ( nk_button_label_styled(ctx, &button_style, "Pause") )
+      {
+         myChip8.pause_flag = !myChip8.pause_flag;
+
+         if (myChip8.pause_flag) 
+            printf("Paused, press space to step through a single instruction or press f5 again to resume.\n"); 
+      }
+
+      button_style.normal.data.color = ctx->style.button.normal.data.color;
+
+      nk_label_colored(ctx, "Tick", NK_TEXT_LEFT, RED);
+      if ( nk_button_label_styled(ctx, &button_style,"Cycle Step") )
+      {
+         if (myChip8.pause_flag) myChip8.cycle_step_flag = true;
+      }
    }
 
    nk_end(ctx);

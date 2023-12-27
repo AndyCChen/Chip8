@@ -22,6 +22,7 @@
 #define MAX_STACK_LEVEL 16
 
 typedef struct {
+	bool pause_flag, cycle_step_flag;
 	uint8_t ram[RAM_SIZE];
 	uint8_t V[V_REGISTERS];
 	uint16_t I;

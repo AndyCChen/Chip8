@@ -14,7 +14,7 @@ void process_key_input_down(SDL_Event *e);
 void process_key_input_up(SDL_Event *e); 
 bool process_command_line_args(int argc, char *argv[]);
 
-static bool chip8_pause_flag = false, cycle_step_flag = false, log_flag = false, gui_flag = true;
+static bool log_flag = false, gui_flag = true;
 
 static const char *rom_path_arg = NULL;
 
@@ -81,7 +81,7 @@ int main( int argc, char *argv[])
 		// exit if close window is pressed
 		if (quit_flag) break;
 
-		if (!chip8_pause_flag)
+		if (!myChip8.pause_flag)
 		{
 			// main chip8 loop process
 			current_time = clock();
@@ -99,10 +99,10 @@ int main( int argc, char *argv[])
 				delta_time = 0;
 			}
 		}
-		else if (cycle_step_flag) // when chip8 is paused, allow stepping through a single cycle 
+		else if (myChip8.cycle_step_flag) // when chip8 is paused, allow stepping through a single cycle 
 		{
 			chip8_run_cycle(log_flag);
-			cycle_step_flag = false;
+			myChip8.cycle_step_flag = false;
 		}
 
 		if (gui_flag) gui_create_widgets(); // declare and initialize gui widgets
@@ -164,15 +164,19 @@ void process_key_input_up(SDL_Event *e)
 		case SDL_SCANCODE_V: chip8_set_key_up(0xF); break;
 		case SDL_SCANCODE_F5: 
 		{
-			chip8_pause_flag = !chip8_pause_flag;
-			if (chip8_pause_flag)
+			myChip8.pause_flag = !myChip8.pause_flag;
+			if (myChip8.pause_flag)
 			{
 				printf("Paused, press space to step through a single instruction or press f5 again to resume.\n"); 
 				display_pause_audio_device(1); // silence audio when chip8 is paused
 			}
 			break;
 		}
-		case SDL_SCANCODE_SPACE: cycle_step_flag = true; break;
+		case SDL_SCANCODE_SPACE: 
+		{
+			if (myChip8.pause_flag) myChip8.cycle_step_flag = true; 
+			break;
+		}
 		default: break;
 	}
 }
