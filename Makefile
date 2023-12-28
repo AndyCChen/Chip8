@@ -14,7 +14,7 @@ LIBRARY_PATHS = -LC:\Emu_Dev\SDL\lib
 COMPILIER_FLAGS = -Wall -Wextra
 
 # linker flags
-LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lopengl32 -lm -lGLU32
+LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2
 
 # name of executable
 OBJ_NAME = chip8
