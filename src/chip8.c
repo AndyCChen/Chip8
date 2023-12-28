@@ -62,6 +62,7 @@ void chip8_reset()
    myChip8.delay_timer = 0;
    myChip8.sound_timer = 0;
    
+   myChip8.clock_rate = DEFAULT_CLOCK_RATE;
    myChip8.pause_flag = false;
    myChip8.cycle_step_flag = false;
 

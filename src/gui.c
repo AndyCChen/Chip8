@@ -24,8 +24,11 @@ static SDL_Renderer *renderer = NULL;
 static int window_height = 0;
 static int window_width = 0;
 
-static struct nk_color RED;
-static struct nk_color CYAN;
+static struct nk_color RED = { 247, 47, 47, 255 };
+static struct nk_color CYAN = { 44, 191, 191, 255 };
+
+static struct nk_colorf bg_color = { 0, 0, 0, 1 };
+static struct nk_colorf fg_color = { 1, 1, 1, 1 };
 
 static int viewport_width;
 
@@ -301,6 +304,8 @@ static void widget_keypad(float x_pos, float y_pos, float width, float height)
             gui_button_states = gui_button_states & ~( 1 << keypad_values[i] );
          }
       }
+
+      nk_button_set_behavior(ctx, NK_BUTTON_DEFAULT);
    }
 
    nk_end(ctx);
@@ -310,8 +315,6 @@ static void widget_debug(float x_pos, float y_pos, float width, float height)
 {
    if ( nk_begin( ctx, "Debug", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
-      nk_button_set_behavior(ctx, NK_BUTTON_DEFAULT);
-
       struct nk_style_button button_style = ctx->style.button;
       button_style.hover.data.color = RED;
       button_style.active.data.color = RED;
@@ -319,12 +322,10 @@ static void widget_debug(float x_pos, float y_pos, float width, float height)
 
       nk_layout_row_static(ctx, 15, 50, 1);
       nk_label_colored(ctx, "Status:", NK_TEXT_LEFT, RED);
-
-      //static bool paused = false;
       
-      float ratio[] = { 50, 100 };
+      float col_widths[] = { 50, 100 };
 
-      nk_layout_row(ctx, NK_STATIC, 20, 2, ratio);
+      nk_layout_row(ctx, NK_STATIC, 20, 2, col_widths);
 
       nk_label_colored(ctx, "Paused", NK_TEXT_LEFT, myChip8.pause_flag ? CYAN : RED);
       if ( nk_button_label_styled(ctx, &button_style, "Pause") )
@@ -351,7 +352,58 @@ static void widget_general(float x_pos, float y_pos, float width, float height)
 {
    if ( nk_begin( ctx, "General", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
    {
-      // todo
+      float width = nk_window_get_width(ctx);
+      float col_widths[] = { width * 0.20, width * 0.25 };
+      static int clock_rate, volume = DEFAULT_VOLUME;
+
+      nk_layout_row(ctx, NK_STATIC, 20, 2, col_widths);
+
+      nk_button_set_behavior(ctx, NK_BUTTON_REPEATER);
+
+      nk_label_colored(ctx, "Clock Rate: ", NK_TEXT_LEFT, RED);
+      clock_rate = myChip8.clock_rate;
+      nk_property_int(ctx, "Clock Rate:", 1, &clock_rate, 2000, 1, 1);
+      myChip8.clock_rate = clock_rate;
+      
+      nk_button_set_behavior(ctx, NK_BUTTON_DEFAULT);
+
+      nk_label_colored(ctx, "Volume: ", NK_TEXT_LEFT, RED);
+      if ( nk_slider_int(ctx, 0, &volume, 5000, 1) )
+      {
+         display_set_volume(volume);
+      }
+      
+      nk_label_colored(ctx, "Background Color:", NK_TEXT_LEFT, RED);
+      if ( nk_combo_begin_color( ctx, nk_rgb_cf(bg_color), nk_vec2( nk_widget_width( ctx ), 400 ) ) )
+      {
+         nk_layout_row_dynamic(ctx, 120, 1);
+         bg_color = nk_color_picker(ctx, bg_color, NK_RGB);
+
+         nk_layout_row_dynamic(ctx, 25, 1);
+         bg_color.r = (float) nk_propertyi(ctx, "#R:", 0, bg_color.r * 255, 255, 1, 1) / 255;
+         bg_color.g = (float) nk_propertyi(ctx, "#G:", 0, bg_color.g * 255, 255, 1, 1) / 255;
+         bg_color.b = (float) nk_propertyi(ctx, "#B:", 0, bg_color.b * 255, 255, 1, 1) / 255;
+
+         nk_combo_end(ctx);
+
+         display_set_bg_color(bg_color.r, bg_color.g, bg_color.b);
+      }
+
+      nk_label_colored(ctx, "Foreground Color:", NK_TEXT_LEFT, RED);
+      if ( nk_combo_begin_color( ctx, nk_rgb_cf(fg_color), nk_vec2( nk_widget_width( ctx ), 400 ) ) )
+      {
+         nk_layout_row_dynamic(ctx, 120, 1);
+         fg_color = nk_color_picker(ctx, fg_color, NK_RGB);
+
+         nk_layout_row_dynamic(ctx, 25, 1);
+         fg_color.r = (float) nk_propertyi(ctx, "#R:", 0, fg_color.r * 255, 255, 1, 1) / 255;
+         fg_color.g = (float) nk_propertyi(ctx, "#G:", 0, fg_color.g * 255, 255, 1, 1) / 255;
+         fg_color.b = (float) nk_propertyi(ctx, "#B:", 0, fg_color.b * 255, 255, 1, 1) / 255;
+
+         nk_combo_end(ctx);
+
+         display_set_fg_color(fg_color.r, fg_color.g, fg_color.b);
+      }
    }
 
    nk_end(ctx);

@@ -14,7 +14,7 @@
 
 // audio settings for square wave beep generator
 
-#define VOLUME 3000
+#define DEFAULT_VOLUME 500
 #define SAMPLES_PER_SEC 44100
 #define FREQUENCY 256 // freq in hz
 #define PERIOD ( SAMPLES_PER_SEC / FREQUENCY ) // number of samples in a period
@@ -53,5 +53,14 @@ SDL_Renderer *display_get_renderer(void);
 void display_present(void);
 
 void display_get_viewport_size(int *width, int *height);
+
+void display_set_bg_color(float r, float g, float b);
+
+void display_set_fg_color(float r, float g, float b);
+
+void display_set_volume(int vol);
+
+// true: mute, false: un-mute
+void display_mute_volume(bool mute_flag);
 
 #endif

@@ -18,9 +18,6 @@ static bool log_flag = false, gui_flag = true;
 
 static const char *rom_path_arg = NULL;
 
-// default clock speed is 500 hz
-static uint32_t chip8_clock_rate = 500;
-
 // default scaling factor of the 64 by 32 pixel display
 // 15 is the default
 static uint32_t display_scale =  15;
@@ -29,10 +26,10 @@ int main( int argc, char *argv[])
 {
 	srand(time(NULL));
 
-	if( !process_command_line_args(argc, argv) ) return EXIT_FAILURE;
-
 	// initialize chip8
 	chip8_reset();
+
+	if( !process_command_line_args(argc, argv) ) return EXIT_FAILURE;
 
 	// attempt to load rom file into chip8 ram
 	if ( !chip8_load_rom(rom_path_arg) ) return EXIT_FAILURE;
@@ -50,7 +47,7 @@ int main( int argc, char *argv[])
 	// timers to lock chip8 speed into a specified clock speed
 
 	float delta_time = 0; // seconds passed in beween loop iterations
-	float delta_time_limit = (float) 1 / chip8_clock_rate;
+	float delta_time_limit;
 	clock_t current_time; 
 	clock_t previous_time = clock();
 	// main loop
@@ -83,11 +80,14 @@ int main( int argc, char *argv[])
 
 		if (!myChip8.pause_flag)
 		{
-			// main chip8 loop process
+			delta_time_limit = (float) 1 / myChip8.clock_rate;
 			current_time = clock();
 
 			delta_time +=  (float) ( current_time - previous_time ) / CLOCKS_PER_SEC;
-			if ( delta_time >= delta_time_limit ) delta_time = delta_time_limit; // limit delta time
+			if ( delta_time >= delta_time_limit ) 
+			{
+				delta_time = delta_time_limit; // limit delta time
+			}
 
 			previous_time = current_time;
 
@@ -167,8 +167,12 @@ void process_key_input_up(SDL_Event *e)
 			myChip8.pause_flag = !myChip8.pause_flag;
 			if (myChip8.pause_flag)
 			{
-				printf("Paused, press space to step through a single instruction or press f5 again to resume.\n"); 
-				display_pause_audio_device(1); // silence audio when chip8 is paused
+				printf("Paused, press space to step through a single instruction or press f5 again to resume.\n");
+				display_mute_volume(true); // mute audio when paused
+			}
+			else
+			{
+				display_mute_volume(false); // unmute audio when unpaused
 			}
 			break;
 		}
@@ -218,9 +222,9 @@ bool process_command_line_args(int argc, char *argv[])
 			case 'l': log_flag = true; break;
 			default:
 			{
-				printf("Usage: chip8.exe [-p rom_path] [-c clock_rate] [-d display_scale]\n");
+				printf("Usage: chip8.exe [-p] [-c] [-d] [-l] [-g]\n");
 				printf("\t -p sets the path to the rom to run, is a required argument\n");
-				printf("\t -c optional, set the clock rate, defaults to %d hz\n", chip8_clock_rate);
+				printf("\t -c optional, set the clock rate to value between 1 - 2000 hz, defaults to %d hz\n", DEFAULT_CLOCK_RATE);
 				printf("\t -d optional, sets the display scale size, defaults to %d\n", display_scale);
 				printf("\t -l optional, enables the disassembler logs to the console\n");
 				printf("\t -g optional, toggles the gui off\n");
@@ -235,7 +239,16 @@ bool process_command_line_args(int argc, char *argv[])
 		return false;
 	}
 
-	if (clock_rate_flag == 1) chip8_clock_rate = atoi(clock_rate_arg);
+	if (clock_rate_flag == 1) 
+	{
+		myChip8.clock_rate = atoi(clock_rate_arg);
+
+		if (myChip8.clock_rate > 2000 || myChip8.clock_rate < 1)
+		{
+			printf("Clock rate is limited between 1 - 2000 hz!\n");
+			return false;
+		}
+	}
 
 	if (display_scale_flag == 1) display_scale = atoi(display_scale_arg);
 

@@ -21,8 +21,22 @@
 // maximum number of stack levels
 #define MAX_STACK_LEVEL 16
 
+#define DEFAULT_CLOCK_RATE 500
+
 typedef struct {
+	float r;
+	float g;
+	float b;
+} Colorf;
+
+typedef struct {
+	// basic debuging settings
+
 	bool pause_flag, cycle_step_flag;
+	uint32_t clock_rate;
+
+	// cpu registers
+
 	uint8_t ram[RAM_SIZE];
 	uint8_t V[V_REGISTERS];
 	uint16_t I;

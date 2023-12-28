@@ -22,6 +22,11 @@ static uint8_t Display_buffer [PIXELS_W * PIXELS_H];
 
 static int VIEWPORT_W = 0, VIEWPORT_H = 0;
 
+static Colorf fg_color = { .r = 1, .g = 1, .b = 1 };
+static Colorf bg_color = { .r = 0, .g = 0, .b = 0 };
+
+static int volume = DEFAULT_VOLUME;
+
 // callback for sdl to use for generating sound
 static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
 {
@@ -32,7 +37,7 @@ static void audio_callback(void* userdata, uint8_t* stream, int streamSize)
 
    for (int sampleIndex = 0; sampleIndex < audioBufferLength; ++sampleIndex)
    {
-      sampleValue = ( ( *runningSampleIndex / HALF_PERIOD ) % 2 ) ? VOLUME : -VOLUME;
+      sampleValue = ( ( *runningSampleIndex / HALF_PERIOD ) % 2 ) ? volume : -volume;
       audioBuffer[sampleIndex] = sampleValue;
       (*runningSampleIndex)++;
    }
@@ -141,13 +146,13 @@ void display_update()
       // if pixel on set color to white
       if (Display_buffer[pixel])
       {
-         SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+         SDL_SetRenderDrawColor(gRenderer, fg_color.r * 0xFF, fg_color.g * 0xFF, fg_color.b * 0xFF, SDL_ALPHA_OPAQUE);
          SDL_RenderFillRect(gRenderer, &Display[pixel]);
       }
       // else pixel is off so we set color to black
       else
       {
-         SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+         SDL_SetRenderDrawColor(gRenderer, bg_color.r * 0xFF, bg_color.g *0xFF, bg_color.b *0xFF, SDL_ALPHA_OPAQUE);
          SDL_RenderFillRect(gRenderer, &Display[pixel]);
       }
    }
@@ -240,4 +245,42 @@ void display_get_viewport_size(int *width, int *height)
 
    if (height == NULL) height = NULL;
    else *height = VIEWPORT_H;
+}
+
+void display_set_bg_color(float r, float g, float b)
+{
+   bg_color.r = r;
+   bg_color.g = g;
+   bg_color.b = b;
+}
+
+void display_set_fg_color(float r, float g, float b)
+{
+   fg_color.r = r;
+   fg_color.g = g;
+   fg_color.b = b;
+}
+
+void display_set_volume(int vol)
+{
+   if ( vol >= 0 )
+   {
+      volume = vol;  
+   } 
+}
+
+void display_mute_volume(bool mute_flag)
+{
+   // save value of volume before muting
+   static int volume_before_mute = DEFAULT_VOLUME;
+
+   if (mute_flag)
+   {
+      volume_before_mute = volume;
+      volume = 0;
+   }
+   else
+   {
+      volume = volume_before_mute;
+   }
 }
