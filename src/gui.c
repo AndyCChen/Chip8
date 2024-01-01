@@ -119,7 +119,7 @@ static void widget_stack(float x_pos, float y_pos, float width, float height)
    static char stack_value_buffer[STACK_VALUE_LABEL_SIZE];
    static char stack_level_buffer[STACK_COUNT_LABEL_SIZE];
 
-   if ( nk_begin( ctx, "Stack", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   if ( nk_begin( ctx, "Stack", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
    {
       for (int stack_level = 0; stack_level < MAX_STACK_LEVEL; ++stack_level)
       {
@@ -155,7 +155,7 @@ static void widget_memory(float x_pos, float y_pos, float width, float height)
 
    static float widths[NUM_OF_COLS] = { 45, 15, 15, 15, 15, 15, 15, 15, 15 }; // widths for each of the 9 columns in a row
 
-   if ( nk_begin( ctx, "Memory", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   if ( nk_begin( ctx, "Memory", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
    {
       nk_layout_row(ctx, NK_STATIC, 15, 9, widths);
 
@@ -190,7 +190,7 @@ static void widget_cpu_state(float x_pos, float y_pos, float width, float height
    static float widths[2] = {30, 35};
    static float v_register_widths[4] = {30, 25, 30, 25};
 
-   if ( nk_begin( ctx, "CPU State", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   if ( nk_begin( ctx, "CPU State", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
    {
       nk_layout_row(ctx, NK_STATIC, 15, 2, widths);
 
@@ -251,7 +251,7 @@ static void widget_cpu_state(float x_pos, float y_pos, float width, float height
 
 static void widget_keypad(float x_pos, float y_pos, float width, float height)
 {
-   if ( nk_begin( ctx, "Keypad", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   if ( nk_begin( ctx, "Keypad", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
    {
       static const char keypad_labels[] = "123C456D789EA0BF"; // char text associated with each keypad button
 
@@ -313,7 +313,7 @@ static void widget_keypad(float x_pos, float y_pos, float width, float height)
 
 static void widget_debug(float x_pos, float y_pos, float width, float height)
 {
-   if ( nk_begin( ctx, "Debug", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   if ( nk_begin( ctx, "Debug", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
    {
       struct nk_style_button button_style = ctx->style.button;
       button_style.hover.data.color = RED;
@@ -350,7 +350,7 @@ static void widget_debug(float x_pos, float y_pos, float width, float height)
 
 static void widget_general(float x_pos, float y_pos, float width, float height)
 {
-   if ( nk_begin( ctx, "General", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MINIMIZABLE ) )
+   if ( nk_begin( ctx, "General", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
    {
       float width = nk_window_get_width(ctx);
       float col_widths[] = { width * 0.20, width * 0.25 };
