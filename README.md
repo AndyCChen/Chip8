@@ -15,7 +15,9 @@ compared to the chip-8 which is a challenge I look forward to now that I am fini
 
 ### Demo
 
-![Chip8 Demo Gif](https://media.giphy.com/media/PUKhnsTsofeErnOVU7/giphy.gif)
+![Chip8 Demo Gif Down8](https://media.giphy.com/media/PUKhnsTsofeErnOVU7/giphy.gif)   
+
+![Chip8 Demo Gif Br8kout](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaWRoM2dzOGxreWw5NGI4dDR1OHVrcGloMXphc3NnZHN0MWF5OGZkcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6XuiwQeIKPlesUfXJL/giphy.gif)
 
 ### Resources
 
