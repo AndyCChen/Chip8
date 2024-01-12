@@ -27,4 +27,6 @@ Here are a list of all resources I found helpful when working on this project.
 - [Lazy Foo's SDL2 Tutorial](https://lazyfoo.net/tutorials/SDL/)
 - [SDL2 renderer backend for Nuklear](https://github.com/Immediate-Mode-UI/Nuklear/blob/master/demo/sdl_renderer/nuklear_sdl_renderer.h)
 - [Chip-8 test roms](https://github.com/Timendus/chip8-test-suite)
-- [Chip-8 games](https://johnearnest.github.io/chip8Archive/?sort=platform)
+- [Chip-8 games](https://johnearnest.github.io/chip8Archive/?sort=platform)  
+- [SDL2 Audio](https://davidgow.net/handmadepenguin/ch8.html)
+
