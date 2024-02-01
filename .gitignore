@@ -1,6 +1,5 @@
 .vscode
 *.exe
-roms
 gui
 temp
 build
