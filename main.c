@@ -22,10 +22,10 @@ static const char *rom_path_arg = NULL;
 // 15 is the default
 static uint32_t display_scale =  15;
 
-int main( int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	srand(time(NULL));
-
+	
 	// initialize chip8
 	chip8_reset();
 

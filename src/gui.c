@@ -9,7 +9,7 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_IMPLEMENTATION
 #define NK_SDL_RENDERER_IMPLEMENTATION
-#include "nuklear.h"
+#include "../nuklear/nuklear.h"
 #include "../includes/nuklear_sdl_renderer.h"
 
 #include "../includes/gui.h"
