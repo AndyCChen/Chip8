@@ -1,4 +1,5 @@
 #include "stdio.h"
+#include "stdint.h"
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -153,14 +154,55 @@ static void widget_memory(float x_pos, float y_pos, float width, float height)
    static char memory_address_buffer[MEMORY_ADDRESS_LABEL_SIZE];
    static char memory_value_buffer[MEMORY_VALUE_LABEL_SIZE];
 
+   static int64_t y_scroll = 0;
+   static bool end_reached = false;
+
    static float widths[NUM_OF_COLS] = { 45, 15, 15, 15, 15, 15, 15, 15, 15 }; // widths for each of the 9 columns in a row
 
-   if ( nk_begin( ctx, "Memory", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE ) )
+   if ( nk_begin( ctx, "Memory", nk_rect(x_pos, y_pos, width, height), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR ) )
    {
+      if ( nk_window_has_focus(ctx) )
+      {
+         if ( (y_scroll - ctx->input.mouse.scroll_delta.y) < 0)
+         {
+            y_scroll = 0;
+         }
+         else
+         {
+            // scroll up
+            if ( (int) ctx->input.mouse.scroll_delta.y == 1 ) 
+            {
+               if (end_reached)
+               {
+                  end_reached = false;
+               }
+               y_scroll -= ctx->input.mouse.scroll_delta.y;
+            }
+            // scroll down
+            else if ( (int) ctx->input.mouse.scroll_delta.y == -1 )
+            {
+               if (!end_reached)
+               {
+                  y_scroll -= ctx->input.mouse.scroll_delta.y;
+               }
+            }
+         }
+      }
+
       nk_layout_row(ctx, NK_STATIC, 15, 9, widths);
 
-      for (int address = 0; address < RAM_SIZE; address += 8)
+      int num_of_rows = ( nk_window_get_height(ctx) / 20 );
+      
+      int address = y_scroll * 8;
+      int address_row = address + (num_of_rows * 8);
+      for (address; address < address_row; address += 8)
       {
+         if (address == RAM_SIZE)
+         {  
+            end_reached = true;
+            break;
+         }
+
          snprintf(memory_address_buffer, MEMORY_ADDRESS_LABEL_SIZE, "%04X", address);
 
          nk_label_colored(ctx, memory_address_buffer, NK_TEXT_CENTERED, RED);
